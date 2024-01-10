@@ -17,6 +17,21 @@
 (function() {
     'use strict';
 
+    function bootstrap() {
+      if (typeof W === 'object' && W.userscripts?.state.isReady) {
+        init();
+      } else {
+        document.addEventListener('wme-ready', init, {
+            once: true,
+        });
+      }
+    }
+
+    function init() {
+      // Add keydown event listener to the document
+      document.addEventListener('keydown', handleKeyDown);
+    }
+
     // Function to open MapshareVic with the coordinates at the center of the screen
     function openMapshareVic() {
 
@@ -50,7 +65,5 @@
         }
     }
 
-    // Add keydown event listener to the document
-    document.addEventListener('keydown', handleKeyDown);
-
+    bootstrap();
 })();
