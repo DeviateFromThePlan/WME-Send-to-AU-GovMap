@@ -28,8 +28,20 @@
     }
 
     function init() {
+      console.log('WME Send to MapshareVic: Initialising')
+      
+      let liveMapElement = document.getElementsByClassName('wz-map-ol-control-mouse-position')[0];
+      let mapShareElement = document.createElement('a');
+      mapShareElement.id = 'WME-MapShare';
+      mapShareElement.classList.add('wz-map-black-link');
+      mapShareElement.innerText = 'MapShareVic';
+      mapShareElement.onclick = openMapshareVic;
+
+      liveMapElement.parentNode.insertBefore(mapShareElement, liveMapElement.nextSibling)
+
       // Add keydown event listener to the document
       document.addEventListener('keydown', handleKeyDown);
+      
     }
 
     // Function to open MapshareVic with the coordinates at the center of the screen
@@ -55,6 +67,7 @@
 
         window.open(mapshareVicURL, '_blank');
 
+      return false;
     }
 
     // Function to handle the keydown event
