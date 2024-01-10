@@ -40,7 +40,7 @@
       mapShareElement.onclick = openMapshareVic;
 
       let liveMapElement = document.getElementsByClassName('wz-map-ol-control-mouse-position')[0];
-      liveMapElement.parentNode.insertBefore(mapShareElement, liveMapElement.nextSibling)
+      liveMapElement.parentNode.insertBefore(mapShareElement, liveMapElement.nextSibling);
     }
 
     // Function to open MapshareVic with the coordinates at the center of the screen
@@ -55,7 +55,7 @@
 
       let [x, y] = proj4(WGS_84, VIC_GRID_94, [lon, lat]);
       let scale = 2500;
-      const mapURL = `https://mapshare.vic.gov.au/mapsharevic/?layerTheme=5scale=${scale}&center=${x}%2C${y}&layers=2%2F7Gju1qBv%2BE1exh5B2NZLPj1qBv%2BE1exh5B1a%2BrRU1EVCLt2SXAYx3g4gTK13pw%2F029RVFg3ufR7i1wHZ9P0pYRq429RVFg3ufR7i2NfjBl0v7KKo29RVFg0Ko5nx3ufR7i3XikB52JwOVQ37%2FQbT106z6X3ufR7i1Pocd100UxYK0uOsFn3APQpP3ufR7i2JwOVQ37%2FQbT3ufR7i2AAqMk1%2F7fnZ2SSAmV2dVLLg29THcp0esJt%2B1%2FvUij0Vh2uR26cIi%2B3uMwRb2TrpCK0wDgJ31Pocd120PgDf02oG%2F11MMMvH1qudLY1qy8pc3B5WKq1KMHS42KTwsK2g5CGb2t%2BJ931Bsloz0YFTf02Zt2Hh1CbU%2FB3S%2BNWC3T1u%2BD1nlgj30eqOPw3ZK6Qz0eKbZP1CcYxN2k2fBh3bvmsT1Pocd13MqwBP2FfPi635e37h03Tvxs3kPWGd03Tvip3kPW1a3kPVoY0SVzxl2wjUgm0rbD5H38g47r3u5s6T2E3%2Bmf3wkeFu2VQLjy3JKLoy`;
+      const mapURL = `https://mapshare.vic.gov.au/mapsharevic/?layerTheme=5&scale=${scale}&center=${x}%2C${y}&layers=2%2F7Gju1qBv%2BE1exh5B2NZLPj1qBv%2BE1exh5B1a%2BrRU1EVCLt2SXAYx3g4gTK13pw%2F029RVFg3ufR7i1wHZ9P0pYRq429RVFg3ufR7i2NfjBl0v7KKo29RVFg0Ko5nx3ufR7i3XikB52JwOVQ37%2FQbT106z6X3ufR7i1Pocd100UxYK0uOsFn3APQpP3ufR7i2JwOVQ37%2FQbT3ufR7i2AAqMk1%2F7fnZ2SSAmV2dVLLg29THcp0esJt%2B1%2FvUij0Vh2uR26cIi%2B3uMwRb2TrpCK0wDgJ31Pocd120PgDf02oG%2F11MMMvH1qudLY1qy8pc3B5WKq1KMHS42KTwsK2g5CGb2t%2BJ931Bsloz0YFTf02Zt2Hh1CbU%2FB3S%2BNWC3T1u%2BD1nlgj30eqOPw3ZK6Qz0eKbZP1CcYxN2k2fBh3bvmsT1Pocd13MqwBP2FfPi635e37h03Tvxs3kPWGd03Tvip3kPW1a3kPVoY0SVzxl2wjUgm0rbD5H38g47r3u5s6T2E3%2Bmf3wkeFu2VQLjy3JKLoy`;
 
       debug(mapURL);
       
