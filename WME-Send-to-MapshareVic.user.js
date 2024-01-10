@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WME Send to MapshareVic
 // @namespace    http://www.example.com
-// @version      0.1
+// @version      2024.01.11.01
 // @description  Opens MapshareVic with the coordinates at the center of the screen when G key is pressed in Waze Map Editor
 // @author       DeviateFromThePlan, maporaptor, lacmacca & ChatGPT
 // @license      MIT
