@@ -1,17 +1,17 @@
 // ==UserScript==
 // @name         WME Send to MapshareVic
-// @namespace    http://www.example.com
-// @version      2024.01.11.02
-// @description  Opens MapshareVic with the coordinates at the center of the screen when G key is pressed in Waze Map Editor
-// @author       DeviateFromThePlan, maporaptor, lacmacca & ChatGPT
+// @namespace    https://github.com/DeviateFromThePlan/WME-Send-to-MapshareVic
+// @version      2024.01.11.01
+// @description  Opens MapshareVic to the coordinates currently in WME.
+// @author       DeviateFromThePlan, maporaptor & lacmacca
 // @license      MIT
 // @match        *://*.waze.com/*editor*
 // @exclude      *://*.waze.com/user/editor*
 // @grant        none
 // @require      https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.5/proj4.js
 // @require      https://greasyfork.org/scripts/24851-wazewrap/code/WazeWrap.js
-// @downloadURL  https://github.com/DeviateFromThePlan/WME-Send-to-MapshareVic/raw/main/WME-Send-to-MapshareVic.user.js
-// @updateURL    https://github.com/DeviateFromThePlan/WME-Send-to-MapshareVic/raw/main/WME-Send-to-MapshareVic.user.js
+// @downloadURL  https://github.com/DeviateFromThePlan/WME-Send-to-MapshareVic/releases/latest/download/WME-Send-to-MapshareVic.user.js
+// @updateURL    https://github.com/DeviateFromThePlan/WME-Send-to-MapshareVic/releases/latest/download/WME-Send-to-MapshareVic.user.js
 // ==/UserScript==
 
 (function() {
