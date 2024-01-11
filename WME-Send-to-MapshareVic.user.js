@@ -10,8 +10,8 @@
 // @grant        none
 // @require      https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.5/proj4.js
 // @require      https://greasyfork.org/scripts/24851-wazewrap/code/WazeWrap.js
-// @downloadURL  https://github.com/DeviateFromThePlan/WME-Send-to-MapshareVic/releases/latest/download/WME-Send-to-MapshareVic.user.js
-// @updateURL    https://github.com/DeviateFromThePlan/WME-Send-to-MapshareVic/releases/latest/download/WME-Send-to-MapshareVic.user.js
+// @downloadURL  https://github.com/DeviateFromThePlan/WME-Send-to-MapshareVic/raw/main/WME-Send-to-MapshareVic.user.js
+// @updateURL    https://github.com/DeviateFromThePlan/WME-Send-to-MapshareVic/raw/main/WME-Send-to-MapshareVic.user.js
 // ==/UserScript==
 
 (function() {
