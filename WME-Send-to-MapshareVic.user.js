@@ -16,44 +16,66 @@
 
 (function() {
     'use strict';
+    const SCRIPT_NAME = 'WME Send to MapshareVic'
+    const wgs84 = '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs';
+    const vicGrid94 = '+proj=tmerc +lat_0=-37 +lon_0=145 +k=1 +x_0=2500000 +y_0=2500000 +ellps=GRS80 +units=m +no_defs';
+
+    function bootstrap() {
+      if (typeof W === 'object' && W.userscripts?.state.isReady) {
+        init();
+      } else {
+        document.addEventListener('wme-ready', init, {
+            once: true,
+        });
+      }
+    }
+
+    function init() {
+      debug('Initialising');
+
+      let mapShareElement = document.createElement('a');
+      mapShareElement.id = 'WME-MapShare';
+      mapShareElement.classList.add('wz-map-black-link');
+      mapShareElement.innerText = 'MapshareVic';
+      mapShareElement.onclick = openMapshareVic;
+
+      let liveMapElement = document.getElementsByClassName('wz-map-ol-control-mouse-position')[0];
+      liveMapElement.parentNode.insertBefore(mapShareElement, liveMapElement.nextSibling);
+    }
 
     // Function to open MapshareVic with the coordinates at the center of the screen
     function openMapshareVic() {
+      let {lon: wazeLon, lat: wazeLat} = W.map.getCenter();
+      const {lon, lat} = WazeWrap.Geometry.ConvertTo4326(wazeLon, wazeLat);
 
-      const center = WazeWrap.Geometry.ConvertTo4326(W.map.getCenter().lon, W.map.getCenter().lat);
-      console.log(center);
-      const latitude = center.lat;
-      const longitude = center.lon;
+      if (isNaN(lat) || isNaN(lon)) {
+        debug('Invalid coordinates');
+        return false;
+      }
 
-      const wgs84 = '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs';
-      const vicGrid94 = '+proj=tmerc +lat_0=-37 +lon_0=145 +k=1 +x_0=2500000 +y_0=2500000 +ellps=GRS80 +units=m +no_defs';
+      const [x, y] = proj4(wgs84, vicGrid94, [lon, lat]);
+      
+      let scale = 8000016.000032;
+      for (let i = 6; i < W.map.getZoom(); i++) {
+        scale /= 2;
+      }
+      
+      const mapURL = `https://mapshare.vic.gov.au/mapsharevic/?scale=${scale}&center=${x}%2C${y}`;
+      if (W.map.getZoom() <= 5) {
+        alert('Please zoom in to use this feature.');
+      } else if (W.map.getZoom() >= 20) {
+        alert('Please zoom out to use this feature.');
+      } else {
+        window.open(mapURL, '_blank');
+      }
 
-      let initialValue = 8000016.000032;
-        function mapscale(increaseAmount) {
-            for (let i = 6; i < increaseAmount; i++) {
-            initialValue /= 2;
-            }
-            return initialValue;
-        }
-
-      const result = proj4(wgs84, vicGrid94, [longitude, latitude]);
-
-      const mapshareVicURL = `https://mapshare.vic.gov.au/mapsharevic/?scale=${mapscale(W.map.getZoom())}&center=${result[0]}%2C${result[1]}`;
-      console.log(mapshareVicURL);
-
-        if(W.map.getZoom()<=5){alert('Please zoom in to use this feature.');}else if(W.map.getZoom()>=20){alert('Please zoom out to use this feature.');}else{window.open(mapshareVicURL, '_blank');}
-
+      //Prevent default a tag functionality
+      return false;
     }
 
-    // Function to handle the keydown event
-    function handleKeyDown(event) {
-        // Check if the pressed key is 'G'
-        if (event.key === 'G' || event.key === 'g') {
-            openMapshareVic();
-        }
+    function debug(message) {
+      console.log(`${SCRIPT_NAME}: ${message}`);
     }
 
-    // Add keydown event listener to the document
-    document.addEventListener('keydown', handleKeyDown);
-
+    bootstrap();
 })();
