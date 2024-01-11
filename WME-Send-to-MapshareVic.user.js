@@ -36,7 +36,7 @@
       let mapShareElement = document.createElement('a');
       mapShareElement.id = 'WME-MapShare';
       mapShareElement.classList.add('wz-map-black-link');
-      mapShareElement.innerText = 'MapShareVic';
+      mapShareElement.innerText = 'MapshareVic';
       mapShareElement.onclick = openMapshareVic;
 
       let liveMapElement = document.getElementsByClassName('wz-map-ol-control-mouse-position')[0];
