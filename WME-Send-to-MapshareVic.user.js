@@ -53,24 +53,26 @@
         return false;
       }
 
-      let initialValue = 8000016.000032;
-        function mapscale(increaseAmount) {
-            for (let i = 6; i < increaseAmount; i++) {
-            initialValue /= 2;
-            }
-            return initialValue;
-        }
+      const [x, y] = proj4(wgs84, vicGrid94, [lon, lat]);
+      
+      let scale = 8000016.000032;
+      for (let i = 6; i < W.map.getZoom(); i++) {
+        scale /= 2;
+      }
+      
+      const mapURL = `https://mapshare.vic.gov.au/mapsharevic/?scale=${scale}&center=${x}%2C${y}`;
+      if (W.map.getZoom() <= 5) {
+        alert('Please zoom in to use this feature.');
+      } else if (W.map.getZoom() >= 20) {
+        alert('Please zoom out to use this feature.');
+      } else {
+        window.open(mapURL, '_blank');
+      }
 
-      const result = proj4(wgs84, vicGrid94, [longitude, latitude]);
-
-      const mapshareVicURL = `https://mapshare.vic.gov.au/mapsharevic/?scale=${mapscale(W.map.getZoom())}&center=${result[0]}%2C${result[1]}`;
-      console.log(mapshareVicURL);
-
-        if(W.map.getZoom()<=5){alert('Please zoom in to use this feature.');}else if(W.map.getZoom()>=20){alert('Please zoom out to use this feature.');}else{window.open(mapshareVicURL, '_blank');}
-
+      //Prevent default a tag functionality
       return false;
     }
-    
+
     function debug(message) {
       console.log(`${SCRIPT_NAME}: ${message}`);
     }
