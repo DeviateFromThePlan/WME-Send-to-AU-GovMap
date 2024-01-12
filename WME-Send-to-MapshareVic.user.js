@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WME Send to MapshareVic
 // @namespace    https://github.com/DeviateFromThePlan/WME-Send-to-MapshareVic
-// @version      2024.01.11.01
+// @version      2024.01.12.01
 // @description  Opens MapshareVic to the coordinates currently in WME.
 // @author       DeviateFromThePlan, maporaptor & lacmacca
 // @license      MIT
@@ -13,6 +13,23 @@
 // @downloadURL  https://github.com/DeviateFromThePlan/WME-Send-to-MapshareVic/releases/latest/download/WME-Send-to-MapshareVic.user.js
 // @updateURL    https://github.com/DeviateFromThePlan/WME-Send-to-MapshareVic/releases/latest/download/WME-Send-to-MapshareVic.user.js
 // ==/UserScript==
+
+// Updates informations
+var UpdateNotes = "";
+const _WHATS_NEW_LIST = { // New in this version
+    '2024.01.11.01': 'Initial Version',
+    '2024.01.12.01': 'Changed scale so it works with with all Waze\'s zoom levels instead of giving alerts.',
+};
+// Var declaration
+var ScriptName = GM_info.script.name;
+var ScriptVersion = GM_info.script.version;
+var segmentcount = 0;
+var actionsloaded = 0;
+var neededparams = {
+    WMESTDCountry: "",
+    WMESTDState: "",
+    WMESTDServer: "",
+};
 
 (function() {
     'use strict';
@@ -29,6 +46,39 @@
         });
       }
     }
+	
+// Check the version of the scritpt in the browser to Warn if the script has been updates
+function VersionCheck() {
+    ///////////////////////////////////////
+    //         Check for updates         //
+    ///////////////////////////////////////
+    if (localStorage.getItem('WMESTDVersion') === ScriptVersion && 'WMESTDVersion' in localStorage) {
+        // Do nothing
+    } else if ('WMESTDVersion' in localStorage) {
+        if(!WazeWrap.Interface) {
+            setTimeout(VersionCheck, 1000);
+            log("WazeWrap not ready, waiting");
+            return;
+        }
+        UpdateNotes = "";
+        for (var key in _WHATS_NEW_LIST) {
+            if(ScriptVersion == key) {
+                UpdateNotes = "What's New ?<br />";
+            }
+            if(UpdateNotes != "")
+            {
+                UpdateNotes = UpdateNotes + "<br />" + key + ": " + _WHATS_NEW_LIST[key];
+            }
+        }
+        UpdateNotes = UpdateNotes + "<br />&nbsp;";
+        WazeWrap.Interface.ShowScriptUpdate(ScriptName, ScriptVersion, UpdateNotes, "");
+        localStorage.setItem('WMESTDVersion', ScriptVersion);
+        $(".WWSUFooter a").text("Gitlab")
+    } else {
+        localStorage.setItem('WMESTDVersion', ScriptVersion);
+    }
+}
+
 
     function init() {
       debug('Initialising');
@@ -41,6 +91,8 @@
 
       let liveMapElement = document.getElementsByClassName('wz-map-ol-control-mouse-position')[0];
       liveMapElement.parentNode.insertBefore(mapShareElement, liveMapElement.nextSibling);
+
+	        setTimeout(VersionCheck(),2000);
     }
 
     // Function to open MapshareVic with the coordinates at the center of the screen
@@ -53,21 +105,25 @@
         return false;
       }
 
-      const [x, y] = proj4(wgs84, vicGrid94, [lon, lat]);
-      
-      let scale = 8000016.000032;
-      for (let i = 6; i < W.map.getZoom(); i++) {
-        scale /= 2;
+      	const [x, y] = proj4(wgs84, vicGrid94, [lon, lat]);
+		let scaleMin = 976.5644531289063;
+        let scaleMax = 8000016.000032;
+		let scale = scaleMax;
+        let WMEscale = W.map.getZoom();
+    
+      if (WMEscale <= 5) {
+          scale = scaleMax;
+      } else if (WMEscale >= 20) {
+          scale = scaleMin;
+      }
+	  else {
+      	for (let i = 6; i < WMEscale; i++) {
+        	scale /= 2;
+	  	}
       }
       
       const mapURL = `https://mapshare.vic.gov.au/mapsharevic/?scale=${scale}&center=${x}%2C${y}`;
-      if (W.map.getZoom() <= 5) {
-        alert('Please zoom in to use this feature.');
-      } else if (W.map.getZoom() >= 20) {
-        alert('Please zoom out to use this feature.');
-      } else {
-        window.open(mapURL, '_blank');
-      }
+      window.open(mapURL, '_blank');
 
       //Prevent default a tag functionality
       return false;
