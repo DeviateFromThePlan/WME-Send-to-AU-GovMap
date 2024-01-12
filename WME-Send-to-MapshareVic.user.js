@@ -56,18 +56,18 @@
       const [x, y] = proj4(wgs84, vicGrid94, [lon, lat]);
       
       let scale = 8000016.000032;
-      for (let i = 6; i < W.map.getZoom(); i++) {
+      let WMEscale = W.map.getZoom();
+      if (WMEscale <= 5) {
+          WMEscale = 5;
+      } else if (WMEscale >= 20) {
+          WMEscale = 20;
+      }
+      for (let i = 6; i < WMEscale; i++) {
         scale /= 2;
       }
       
       const mapURL = `https://mapshare.vic.gov.au/mapsharevic/?scale=${scale}&center=${x}%2C${y}`;
-      if (W.map.getZoom() <= 5) {
-        alert('Please zoom in to use this feature.');
-      } else if (W.map.getZoom() >= 20) {
-        alert('Please zoom out to use this feature.');
-      } else {
-        window.open(mapURL, '_blank');
-      }
+      window.open(mapURL, '_blank');
 
       //Prevent default a tag functionality
       return false;
