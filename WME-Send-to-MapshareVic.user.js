@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WME Send to MapshareVic
 // @namespace    https://github.com/DeviateFromThePlan/WME-Send-to-MapshareVic
-// @version      2024.01.11.01
+// @version      2024.01.12.01
 // @description  Opens MapshareVic to the coordinates currently in WME.
 // @author       DeviateFromThePlan, maporaptor & lacmacca
 // @license      MIT
@@ -13,6 +13,23 @@
 // @downloadURL  https://github.com/DeviateFromThePlan/WME-Send-to-MapshareVic/releases/latest/download/WME-Send-to-MapshareVic.user.js
 // @updateURL    https://github.com/DeviateFromThePlan/WME-Send-to-MapshareVic/releases/latest/download/WME-Send-to-MapshareVic.user.js
 // ==/UserScript==
+
+// Updates informations
+var UpdateNotes = "";
+const _WHATS_NEW_LIST = { // New in this version
+    '2024.01.11.01': 'Initial Version',
+    '2024.01.12.01': 'Changed scale so it works with with all Waze\'s zoom levels instead of giving alerts.',
+};
+// Var declaration
+var ScriptName = GM_info.script.name;
+var ScriptVersion = GM_info.script.version;
+var segmentcount = 0;
+var actionsloaded = 0;
+var neededparams = {
+    WMESTDCountry: "",
+    WMESTDState: "",
+    WMESTDServer: "",
+};
 
 (function() {
     'use strict';
@@ -53,17 +70,21 @@
         return false;
       }
 
-      const [x, y] = proj4(wgs84, vicGrid94, [lon, lat]);
-      
-      let scale = 8000016.000032;
-      let WMEscale = W.map.getZoom();
+      	const [x, y] = proj4(wgs84, vicGrid94, [lon, lat]);
+		let scaleMin = 976.5644531289063;
+        let scaleMax = 8000016.000032;
+		let scale = scaleMax;
+        let WMEscale = W.map.getZoom();
+    
       if (WMEscale <= 5) {
-          WMEscale = 5;
+          scale = scaleMax;
       } else if (WMEscale >= 20) {
-          WMEscale = 20;
+          scale = scaleMin;
       }
-      for (let i = 6; i < WMEscale; i++) {
-        scale /= 2;
+	  else {
+      	for (let i = 6; i < WMEscale; i++) {
+        	scale /= 2;
+	  	}
       }
       
       const mapURL = `https://mapshare.vic.gov.au/mapsharevic/?scale=${scale}&center=${x}%2C${y}`;
