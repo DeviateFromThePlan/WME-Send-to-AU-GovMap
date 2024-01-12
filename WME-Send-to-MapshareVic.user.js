@@ -46,6 +46,39 @@ var neededparams = {
         });
       }
     }
+	
+// Check the version of the scritpt in the browser to Warn if the script has been updates
+function VersionCheck() {
+    ///////////////////////////////////////
+    //         Check for updates         //
+    ///////////////////////////////////////
+    if (localStorage.getItem('WMESTDVersion') === ScriptVersion && 'WMESTDVersion' in localStorage) {
+        // Do nothing
+    } else if ('WMESTDVersion' in localStorage) {
+        if(!WazeWrap.Interface) {
+            setTimeout(VersionCheck, 1000);
+            log("WazeWrap not ready, waiting");
+            return;
+        }
+        UpdateNotes = "";
+        for (var key in _WHATS_NEW_LIST) {
+            if(ScriptVersion == key) {
+                UpdateNotes = "What's New ?<br />";
+            }
+            if(UpdateNotes != "")
+            {
+                UpdateNotes = UpdateNotes + "<br />" + key + ": " + _WHATS_NEW_LIST[key];
+            }
+        }
+        UpdateNotes = UpdateNotes + "<br />&nbsp;";
+        WazeWrap.Interface.ShowScriptUpdate(ScriptName, ScriptVersion, UpdateNotes, "");
+        localStorage.setItem('WMESTDVersion', ScriptVersion);
+        $(".WWSUFooter a").text("Gitlab")
+    } else {
+        localStorage.setItem('WMESTDVersion', ScriptVersion);
+    }
+}
+
 
     function init() {
       debug('Initialising');
@@ -58,6 +91,8 @@ var neededparams = {
 
       let liveMapElement = document.getElementsByClassName('wz-map-ol-control-mouse-position')[0];
       liveMapElement.parentNode.insertBefore(mapShareElement, liveMapElement.nextSibling);
+
+	        setTimeout(VersionCheck(),2000);
     }
 
     // Function to open MapshareVic with the coordinates at the center of the screen
