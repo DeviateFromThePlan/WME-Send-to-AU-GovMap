@@ -1,5 +1,5 @@
-name: Enquiry
-description: Want to ask a question?
+name: "Enquiry"
+description: "Want to ask a question?"
 labels:
   - 'bug'
 assignees: ''
@@ -7,6 +7,6 @@ body:
     - type: textarea
       id: question
       attributes:
-        label: What's your question?
+        label: "What's your question?"
       validations:
         required: true
