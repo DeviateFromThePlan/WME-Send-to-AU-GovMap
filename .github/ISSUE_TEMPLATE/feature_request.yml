@@ -2,7 +2,6 @@ name: "Feature request"
 description: "Have an idea for a new feature? Let's hear it!"
 labels:
   - 'enhancement'
-assignees: ''
 body:
     - type: textarea
       id: problem
