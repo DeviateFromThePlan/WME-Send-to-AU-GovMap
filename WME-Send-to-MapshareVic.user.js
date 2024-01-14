@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         WME Send to MapshareVic
+// @name         WME Send to GovMap
 // @namespace    https://github.com/DeviateFromThePlan/WME-Send-to-MapshareVic
-// @version      2024.01.12.01
-// @description  Opens MapshareVic to the coordinates currently in WME.
+// @version      2024.01.15.01
+// @description  Opens your government's map to the coordinates currently in WME.
 // @author       DeviateFromThePlan, maporaptor & lacmacca
 // @license      MIT
 // @match        *://*.waze.com/*editor*
@@ -33,7 +33,7 @@ var neededparams = {
 
 (function() {
     'use strict';
-    const SCRIPT_NAME = 'WME Send to MapshareVic'
+    const SCRIPT_NAME = 'WME Send to GovMap'
     const wgs84 = '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs';
     const vicGrid94 = '+proj=tmerc +lat_0=-37 +lon_0=145 +k=1 +x_0=2500000 +y_0=2500000 +ellps=GRS80 +units=m +no_defs';
 
@@ -46,7 +46,7 @@ var neededparams = {
         });
       }
     }
-	
+
 // Check the version of the scritpt in the browser to Warn if the script has been updates
 function VersionCheck() {
     ///////////////////////////////////////
@@ -104,6 +104,7 @@ function VersionCheck() {
             clearInterval(refreshState);
             refreshState = null;
 
+            // Check compatability
             if(country.getName() == "Australia") {
                 if(W.map.getZoom() < 12) {
                     return WazeWrap.Alerts.warning(ScriptName, 'Please Zoom in to at least Level 12.');
@@ -111,11 +112,15 @@ function VersionCheck() {
                 else if(state.getName()) {
                     if(state.getName() == "Victoria")
                     {
-                        return openMapshareVic();
+                        return openMapshareVic(); // Victoria
                     }
                     else if(state.getName() == 'South Australia')
                     {
-                        return openLocationSAViewer();
+                        return openLocationSAViewer(); // South Australia
+                    }
+                    else if(state.getName() == 'New South Wales')
+                    {
+                        return openGisNSW(); // New South Wales
                     }
                     else
                     {
@@ -137,7 +142,9 @@ function VersionCheck() {
         }
 
 
-    // Function to open MapshareVic with the coordinates at the center of the screen
+    ////////////////
+    //  VICTORIA  //
+    ////////////////
     function openMapshareVic() {
       let {lon: wazeLon, lat: wazeLat} = W.map.getCenter();
       const {lon, lat} = WazeWrap.Geometry.ConvertTo4326(wazeLon, wazeLat);
@@ -171,6 +178,9 @@ function VersionCheck() {
       return false;
     }
 
+    ///////////////////////
+    //  SOUTH AUSTRALIA  //
+    ///////////////////////
         function openLocationSAViewer() {
        let {lon: wazeLon, lat: wazeLat} = W.map.getCenter();
       const {lon, lat} = WazeWrap.Geometry.ConvertTo4326(wazeLon, wazeLat);
@@ -201,6 +211,22 @@ function VersionCheck() {
       return false;
     }
 
+    /////////////////////
+    // NEW SOUTH WALES //
+    /////////////////////
+    function openGisNSW() {
+        let {lon: wazeLon, lat: wazeLat} = W.map.getCenter();
+        const {lon, lat} = WazeWrap.Geometry.ConvertTo4326(wazeLon, wazeLat);
+        const [x, y] = [lon, lat];
+
+        const mapURL = `https://www.arcgis.com/home/webmap/viewer.html?url=http%3A%2F%2Fmaps.six.nsw.gov.au%2Farcgis%2Frest%2Fservices%2Fpublic%2FNSW_Base_Map%2FMapServer&find=${x},${y}`;
+        window.open(mapURL, '_blank');
+
+        //Prevent default a tag functionality
+        return false;
+    }
+
+    // General Stuff
     function debug(message) {
       console.log(`${SCRIPT_NAME}: ${message}`);
     }
