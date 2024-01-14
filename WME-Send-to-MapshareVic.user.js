@@ -18,7 +18,7 @@
 var UpdateNotes = "";
 const _WHATS_NEW_LIST = { // New in this version
     '2024.01.11.01': 'Initial Version',
-    '2024.01.12.01': 'Changed scale so it works with with all Waze\'s zoom levels instead of giving alerts.',
+    '2024.01.12.01': 'Added SA (the only other map we could add atm) and now the script can work out the states to prevent use in other states.',
 };
 // Var declaration
 var ScriptName = GM_info.script.name;
@@ -83,17 +83,59 @@ function VersionCheck() {
     function init() {
       debug('Initialising');
 
-      let mapShareElement = document.createElement('a');
-      mapShareElement.id = 'WME-MapShare';
-      mapShareElement.classList.add('wz-map-black-link');
-      mapShareElement.innerText = 'MapshareVic';
-      mapShareElement.onclick = openMapshareVic;
+      let mapLinkElement = document.createElement('a');
+      mapLinkElement.id = 'WME-showState';
+      mapLinkElement.classList.add('wz-map-black-link');
+      mapLinkElement.innerText = '🇦🇺 GovMap';
+      mapLinkElement.onclick = getMapLink;
 
       let liveMapElement = document.getElementsByClassName('wz-map-ol-control-mouse-position')[0];
-      liveMapElement.parentNode.insertBefore(mapShareElement, liveMapElement.nextSibling);
+      liveMapElement.parentNode.insertBefore(mapLinkElement, liveMapElement.nextSibling);
 
-	        setTimeout(VersionCheck(),2000);
+	setTimeout(VersionCheck(),2000);
     }
+
+        function getMapLink() {
+        var country = W.model.getTopCountry();
+        var state = W.model.getTopState();
+
+        if(WazeWrap.Util.mapReady && WazeWrap.Util.modelReady)
+        {
+            clearInterval(refreshState);
+            refreshState = null;
+
+            if(country.getName() == "Australia") {
+                if(W.map.getZoom() < 12) {
+                    return WazeWrap.Alerts.warning(ScriptName, 'Please Zoom in to at least Level 12.');
+                }
+                else if(state.getName()) {
+                    if(state.getName() == "Victoria")
+                    {
+                        return openMapshareVic();
+                    }
+                    else if(state.getName() == 'South Australia')
+                    {
+                        return openLocationSAViewer();
+                    }
+                    else
+                    {
+                        return WazeWrap.Alerts.warning(ScriptName, 'Sorry but we currently don\'t support loading maps from '+state.getName()+'.');
+                    }
+                }
+                else if(state.getName() == '') {
+                    return WazeWrap.Alerts.warning(ScriptName, 'Please move closer to land.');
+                }
+            }
+            else {
+               return WazeWrap.Alerts.warning(ScriptName, 'Sorry but we currently don\'t support loading maps from other countries but Australia.');
+            }
+        }
+        else {
+          var refreshState = setInterval(this, 1000);
+          return refreshState;
+       }
+        }
+
 
     // Function to open MapshareVic with the coordinates at the center of the screen
     function openMapshareVic() {
@@ -110,7 +152,7 @@ function VersionCheck() {
         let scaleMax = 8000016.000032;
 		let scale = scaleMax;
         let WMEscale = W.map.getZoom();
-    
+
       if (WMEscale <= 5) {
           scale = scaleMax;
       } else if (WMEscale >= 20) {
@@ -121,8 +163,38 @@ function VersionCheck() {
         	scale /= 2;
 	  	}
       }
-      
+
       const mapURL = `https://mapshare.vic.gov.au/mapsharevic/?scale=${scale}&center=${x}%2C${y}`;
+      window.open(mapURL, '_blank');
+
+      //Prevent default a tag functionality
+      return false;
+    }
+
+        function openLocationSAViewer() {
+       let {lon: wazeLon, lat: wazeLat} = W.map.getCenter();
+      const {lon, lat} = WazeWrap.Geometry.ConvertTo4326(wazeLon, wazeLat);
+      const [x, y] = [lon, lat];
+
+      if (isNaN(lat) || isNaN(lon)) {
+        debug('Invalid coordinates');
+        return false;
+      }
+
+            function shortenCoordinates(latitude, longitude, decimalPlaces = 4) {
+    const shortenedLat = latitude.toFixed(decimalPlaces);
+    const shortenedLon = longitude.toFixed(decimalPlaces);
+    return [parseFloat(shortenedLat), parseFloat(shortenedLon)];
+}
+
+        let WMEscale = W.map.getZoom();
+        let zoom = null;
+
+      if (WMEscale >= 6) {
+          zoom = WMEscale;
+      }
+
+      const mapURL = `https://location.sa.gov.au/viewer/?map=hybrid&x=${x}&y=${y}&z=${zoom}`;
       window.open(mapURL, '_blank');
 
       //Prevent default a tag functionality
