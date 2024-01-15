@@ -63,7 +63,7 @@ function VersionCheck() {
         }
         UpdateNotes = "";
         for (var key in _WHATS_NEW_LIST) {
-            if(ScriptVersion == key) {
+            if(ScriptVersion === key) {
                 UpdateNotes = "What's New ?<br />";
             }
             if(UpdateNotes != "")
@@ -123,20 +123,20 @@ function VersionCheck() {
             refreshState = null;
 
             // Check compatability
-            if(country.getName() == "Australia") {
+            if(country.getName() === "Australia") {
                 if(W.map.getZoom() < 12) {
                     return WazeWrap.Alerts.warning(ScriptName, 'Please Zoom in to at least Level 12.');
                 }
                 else if(state.getName()) {
-                    if(state.getName() == "Victoria")
+                    if(state.getName() === "Victoria")
                     {
                         return openMapshareVic(); // Victoria
                     }
-                    else if(state.getName() == 'South Australia')
+                    else if(state.getName() === 'South Australia')
                     {
                         return openLocationSAViewer(); // South Australia
                     }
-                    else if(state.getName() == 'New South Wales')
+                    else if(state.getName() === 'New South Wales')
                     {
                         return openGisNSW(); // New South Wales
                     }
@@ -145,7 +145,7 @@ function VersionCheck() {
                         return WazeWrap.Alerts.warning(ScriptName, 'Sorry but we currently don\'t support loading maps from '+state.getName()+'.');
                     }
                 }
-                else if(state.getName() == '') {
+                else if(state.getName() === '') {
                     return WazeWrap.Alerts.warning(ScriptName, 'Please move closer to land.');
                 }
             }
@@ -159,13 +159,10 @@ function VersionCheck() {
        }
         }
 
-        $('#govmapGKey').change(function() {
-            if(document.controls.govmapGKey.value == true) {
-                let govmapGKeyEnabled = true;
-            } else {
-                let govmapGKeyEnabled = false;
-            }
-            console.log(govmapGKeyEnabled);
+        $('#govmapGKey').change(() => {
+            // If value is always guaranteed to be true/false, you can omit the `=== true`.
+            const govmapGKeyEnabled = document.controls.govmapGKey.value === true;
+            console.log("WME Send to AU GovMap GKey controls are "+govmapGKeyEnabled);
         });
 
 
@@ -258,7 +255,7 @@ function VersionCheck() {
         function activateGkey() {
             // Check if the mouse is over the map area
             // You may need to adjust the selector based on the Waze Map Editor structure
-            if (document.querySelector('#WazeMap:hover') && (event.key === 'g' || event.key === 'G') && govmapGKeyEnabled == true) {
+            if (document.querySelector('#WazeMap:hover') && (event.key === 'g' || event.key === 'G') && govmapGKeyEnabled === true) {
                 getMapLink();
             }
         }
