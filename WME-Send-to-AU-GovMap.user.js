@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         WME Send to MapshareVic
-// @namespace    https://github.com/DeviateFromThePlan/WME-Send-to-MapshareVic
-// @version      2024.01.12.01
-// @description  Opens MapshareVic to the coordinates currently in WME.
+// @name         WME Send to AU GovMap
+// @namespace    https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap
+// @version      2024.01.15.01
+// @description  Opens your government's map to the coordinates currently in WME.
 // @author       DeviateFromThePlan, maporaptor & lacmacca
 // @license      MIT
 // @match        *://*.waze.com/*editor*
@@ -10,8 +10,8 @@
 // @grant        none
 // @require      https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.5/proj4.js
 // @require      https://greasyfork.org/scripts/24851-wazewrap/code/WazeWrap.js
-// @downloadURL  https://github.com/DeviateFromThePlan/WME-Send-to-MapshareVic/releases/latest/download/WME-Send-to-MapshareVic.user.js
-// @updateURL    https://github.com/DeviateFromThePlan/WME-Send-to-MapshareVic/releases/latest/download/WME-Send-to-MapshareVic.user.js
+// @downloadURL  https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap/releases/latest/download/WME-Send-to-AU-GovMap.user.js
+// @updateURL    https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap/releases/latest/download/WME-Send-to-AU-GovMap.user.js
 // ==/UserScript==
 
 // Updates informations
@@ -33,7 +33,7 @@ var neededparams = {
 
 (function() {
     'use strict';
-    const SCRIPT_NAME = 'WME Send to MapshareVic'
+    const SCRIPT_NAME = 'WME Send to AU GovMap'
     const wgs84 = '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs';
     const vicGrid94 = '+proj=tmerc +lat_0=-37 +lon_0=145 +k=1 +x_0=2500000 +y_0=2500000 +ellps=GRS80 +units=m +no_defs';
 
