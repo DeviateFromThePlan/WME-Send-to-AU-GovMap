@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         WME Send to GovMap
-// @namespace    https://github.com/DeviateFromThePlan/WME-Send-to-MapshareVic
+// @namespace    https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap
 // @version      2024.01.15.01
 // @description  Opens your government's map to the coordinates currently in WME.
 // @author       DeviateFromThePlan, maporaptor & lacmacca
@@ -10,15 +10,15 @@
 // @grant        none
 // @require      https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.5/proj4.js
 // @require      https://greasyfork.org/scripts/24851-wazewrap/code/WazeWrap.js
-// @downloadURL  https://github.com/DeviateFromThePlan/WME-Send-to-MapshareVic/releases/latest/download/WME-Send-to-MapshareVic.user.js
-// @updateURL    https://github.com/DeviateFromThePlan/WME-Send-to-MapshareVic/releases/latest/download/WME-Send-to-MapshareVic.user.js
+// @downloadURL  https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap/releases/latest/download/WME-Send-to-AU-GovMap.user.js
+// @updateURL    https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap/releases/latest/download/WME-Send-to-AU-GovMap.user.js
 // ==/UserScript==
 
 // Updates informations
 var UpdateNotes = "";
 const _WHATS_NEW_LIST = { // New in this version
     '2024.01.11.01': 'Initial Version',
-    '2024.01.12.01': 'Added SA (the only other map we could add atm) and now the script can work out the states to prevent use in other states.',
+    '2024.01.15.01': 'Added support for SA & NSW; Added an option to trigger script with the G-key, rather than the button; Renamed to WME Send to AU GovMap',
 };
 // Var declaration
 var ScriptName = GM_info.script.name;
@@ -79,10 +79,29 @@ function VersionCheck() {
     }
 }
 
+var govmapGKeyEnabled = false;
 
     function init() {
       debug('Initialising');
 
+      // Settings tab
+      let $section = $("<div>");
+      $section.html([
+        '<h4>WME Send to AU GovMap</h4>',
+        '<h6>Controls</h6>',
+        '<form id="controls" name="controls">',
+        '<input type="checkbox" id="govmapGKey" name="govmapGKey" value="true"/> G Key',
+        '</form>'
+      ].join(''));
+      WazeWrap.Interface.Tab('GovMap', $section.html(), function(){});
+     
+        
+        $('#govmapGKey').change(function() {
+            govmapGKeyEnabled = this.checked;
+            console.log("WME Send to AU GovMap: G-Key control "+govmapGKeyEnabled);
+        });
+
+      // Button
       let mapLinkElement = document.createElement('a');
       mapLinkElement.id = 'WME-showState';
       mapLinkElement.classList.add('wz-map-black-link');
@@ -140,6 +159,15 @@ function VersionCheck() {
           return refreshState;
        }
         }
+
+        $('#govmapGKey').change(function() {
+            if(document.controls.govmapGKey.value == true) {
+                let govmapGKeyEnabled = true;
+            } else {
+                let govmapGKeyEnabled = false;
+            }
+            console.log(govmapGKeyEnabled);
+        });
 
 
     ////////////////
@@ -227,6 +255,17 @@ function VersionCheck() {
     }
 
     // General Stuff
+        // Function to handle the keydown event
+        function handleKeyDown(event) {
+            // Check if the pressed key is 'G'
+            if (event.key === 'G' || event.key === 'g' && govmapGKeyEnabled == true) {
+                getMapLink();
+            }
+        }
+    
+        // Add keydown event listener to the document
+        document.addEventListener('keydown', handleKeyDown);
+
     function debug(message) {
       console.log(`${SCRIPT_NAME}: ${message}`);
     }
