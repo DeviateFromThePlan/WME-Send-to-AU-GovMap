@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         WME Send to GovMap
+// @name         WME Send to AU GovMap
 // @namespace    https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap
 // @version      2024.01.15.01
 // @description  Opens your government's map to the coordinates currently in WME.
@@ -33,7 +33,7 @@ var neededparams = {
 
 (function() {
     'use strict';
-    const SCRIPT_NAME = 'WME Send to GovMap'
+    const SCRIPT_NAME = 'WME Send to AU GovMap'
     const wgs84 = '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs';
     const vicGrid94 = '+proj=tmerc +lat_0=-37 +lon_0=145 +k=1 +x_0=2500000 +y_0=2500000 +ellps=GRS80 +units=m +no_defs';
 
@@ -198,7 +198,7 @@ var govmapGKeyEnabled = false;
         	scale /= 2;
 	  	}
       }
-
+      
       const mapURL = `https://mapshare.vic.gov.au/mapsharevic/?scale=${scale}&center=${x}%2C${y}`;
       window.open(mapURL, '_blank');
 

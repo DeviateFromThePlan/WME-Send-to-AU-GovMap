@@ -1,5 +1,5 @@
-# WME Send to MapshareVic
-Sends current WME coordinates to MapshareVic
+# WME Send to AU GovMap
+Opens your government's map to the coordinates currently in WME.
 
 A script written by @DeviateFromThePlan, @maporaptor & @lacmacca.
 
