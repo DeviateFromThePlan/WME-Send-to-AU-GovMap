@@ -25,6 +25,7 @@ var ScriptName = GM_info.script.name;
 var ScriptVersion = GM_info.script.version;
 var segmentcount = 0;
 var actionsloaded = 0;
+var govmapGKeyEnabled = false;
 var neededparams = {
     WMESTDCountry: "",
     WMESTDState: "",
@@ -78,8 +79,6 @@ function VersionCheck() {
         localStorage.setItem('WMESTDVersion', ScriptVersion);
     }
 }
-
-var govmapGKeyEnabled = false;
 
     function init() {
       debug('Initialising');
@@ -256,15 +255,15 @@ var govmapGKeyEnabled = false;
 
     // General Stuff
         // Function to handle the keydown event
-        function handleKeyDown(event) {
-            // Check if the pressed key is 'G'
-            if (event.key === 'G' || event.key === 'g' && govmapGKeyEnabled == true) {
+        function activateGkey() {
+            // Check if the mouse is over the map area
+            // You may need to adjust the selector based on the Waze Map Editor structure
+            if (document.querySelector('#WazeMap:hover') && (event.key === 'g' || event.key === 'G') && govmapGKeyEnabled == true) {
                 getMapLink();
             }
         }
     
-        // Add keydown event listener to the document
-        document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('keydown', activateGkey);
 
     function debug(message) {
       console.log(`${SCRIPT_NAME}: ${message}`);
