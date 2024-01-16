@@ -243,7 +243,7 @@ function VersionCheck() {
         const {lon, lat} = WazeWrap.Geometry.ConvertTo4326(wazeLon, wazeLat);
         const [x, y] = [lon, lat];
 
-        const mapURL = `https://www.arcgis.com/home/webmap/viewer.html?url=http%3A%2F%2Fmaps.six.nsw.gov.au%2Farcgis%2Frest%2Fservices%2Fpublic%2FNSW_Base_Map%2FMapServer&find=${x},${y}`;
+        const mapURL = `https://www.arcgis.com/home/webmap/viewer.html?basemapUrl=http%3A%2F%2Fmaps.six.nsw.gov.au%2Farcgis%2Frest%2Fservices%2Fpublic%2FNSW_Base_Map%2FMapServer&find=${x},${y}`;
         window.open(mapURL, '_blank');
 
         //Prevent default a tag functionality
