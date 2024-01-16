@@ -6,6 +6,7 @@
 // @author       DeviateFromThePlan, maporaptor & lacmacca
 // @license      MIT
 // @match        *://*.waze.com/*editor*
+// @match        https://qldglobe.information.qld.gov.au*
 // @exclude      *://*.waze.com/user/editor*
 // @grant        none
 // @require      https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.5/proj4.js
@@ -34,6 +35,9 @@ var neededparams = {
 
 (function() {
     'use strict';
+    if (document.URL.includes("https://qldglobe.information.qld.gov.au/")) {
+        //INSERT QLDGLOBE CODE HERE
+    } else {
     const SCRIPT_NAME = 'WME Send to AU GovMap'
     const wgs84 = '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs';
     const vicGrid94 = '+proj=tmerc +lat_0=-37 +lon_0=145 +k=1 +x_0=2500000 +y_0=2500000 +ellps=GRS80 +units=m +no_defs';
@@ -267,4 +271,6 @@ function VersionCheck() {
     }
 
     bootstrap();
+
+}
 })();
