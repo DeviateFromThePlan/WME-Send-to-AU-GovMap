@@ -14,31 +14,31 @@
 // @downloadURL  https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap/releases/latest/download/WME-Send-to-AU-GovMap.user.js
 // @updateURL    https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap/releases/latest/download/WME-Send-to-AU-GovMap.user.js
 // ==/UserScript==
+(function() {
+    'use strict';
 
 // Updates informations
-var UpdateNotes = "";
+var UPDATE_NOTES = "";
 const _WHATS_NEW_LIST = { // New in this version
     '2024.01.11.01': 'Initial Version',
     '2024.01.15.01': 'Added support for SA & NSW; Added an option to trigger script with the G-key, rather than the button; Renamed to WME Send to AU GovMap',
 };
 // Var declaration
-var ScriptName = GM_info.script.name;
-var ScriptVersion = GM_info.script.version;
-var segmentcount = 0;
-var actionsloaded = 0;
-var govmapGKeyEnabled = false;
-var neededparams = {
+const SCRIPT_NAME = GM_info.script.name;
+const SCRIPT_VERSION = GM_info.script.version;
+const DOWNLOAD_URL = 'https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap/releases/latest/download/WME-Send-to-AU-GovMap.user.js';
+let SEGMENT_COUNT = 0;
+let ACTIONS_LOADED = 0;
+var GOVMAP_GKEY_ENABLED = false;
+let NEEDED_PARAMS = {
     WMESTDCountry: "",
     WMESTDState: "",
     WMESTDServer: "",
 };
 
-(function() {
-    'use strict';
     if (document.URL.includes("https://qldglobe.information.qld.gov.au/")) {
         //INSERT QLDGLOBE CODE HERE
     } else {
-    const SCRIPT_NAME = 'WME Send to AU GovMap'
     const wgs84 = '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs';
     const vicGrid94 = '+proj=tmerc +lat_0=-37 +lon_0=145 +k=1 +x_0=2500000 +y_0=2500000 +ellps=GRS80 +units=m +no_defs';
 
@@ -57,7 +57,7 @@ function VersionCheck() {
     ///////////////////////////////////////
     //         Check for updates         //
     ///////////////////////////////////////
-    if (localStorage.getItem('WMESTDVersion') === ScriptVersion && 'WMESTDVersion' in localStorage) {
+    if (localStorage.getItem('WMESTDVersion') === SCRIPT_VERSION && 'WMESTDVersion' in localStorage) {
         // Do nothing
     } else if ('WMESTDVersion' in localStorage) {
         if(!WazeWrap.Interface) {
@@ -65,27 +65,36 @@ function VersionCheck() {
             log("WazeWrap not ready, waiting");
             return;
         }
-        UpdateNotes = "";
+        UPDATE_NOTES = "";
         for (var key in _WHATS_NEW_LIST) {
-            if(ScriptVersion === key) {
-                UpdateNotes = "What's New ?<br />";
+            if(SCRIPT_VERSION === key) {
+                UPDATE_NOTES = "What's New ?<br />";
             }
-            if(UpdateNotes != "")
+            if(UPDATE_NOTES != "")
             {
-                UpdateNotes = UpdateNotes + "<br />" + key + ": " + _WHATS_NEW_LIST[key];
+                UPDATE_NOTES = UPDATE_NOTES + "<br />" + key + ": " + _WHATS_NEW_LIST[key];
             }
         }
-        UpdateNotes = UpdateNotes + "<br />&nbsp;";
-        WazeWrap.Interface.ShowScriptUpdate(ScriptName, ScriptVersion, UpdateNotes, "");
-        localStorage.setItem('WMESTDVersion', ScriptVersion);
+        UPDATE_NOTES = UPDATE_NOTES + "<br />&nbsp;";
+        WazeWrap.Interface.ShowScriptUpdate(SCRIPT_NAME, SCRIPT_VERSION, UPDATE_NOTES, "");
+        localStorage.setItem('WMESTDVersion', SCRIPT_VERSION);
         $(".WWSUFooter a").text("Gitlab")
     } else {
-        localStorage.setItem('WMESTDVersion', ScriptVersion);
+        localStorage.setItem('WMESTDVersion', SCRIPT_VERSION);
     }
 }
 
     function init() {
       debug('Initialising');
+
+      let updateMonitor;
+      try {
+          updateMonitor = new WazeWrap.Alerts.ScriptUpdateMonitor(SCRIPT_NAME, SCRIPT_VERSION, DOWNLOAD_URL, GM_xmlhttpRequest);
+          updateMonitor.start();
+      } catch (ex) {
+          // Report, but don't stop if ScriptUpdateMonitor fails.
+          console.error('WMEPH:', ex);
+      }
 
       // Settings tab
       let $section = $("<div>");
@@ -100,8 +109,8 @@ function VersionCheck() {
      
         
         $('#govmapGKey').change(function() {
-            govmapGKeyEnabled = this.checked;
-            console.log("WME Send to AU GovMap: G-Key control "+govmapGKeyEnabled);
+            GOVMAP_GKEY_ENABLED = this.checked;
+            console.log("WME Send to AU GovMap: G-Key control "+GOVMAP_GKEY_ENABLED);
         });
 
       // Button
@@ -129,7 +138,7 @@ function VersionCheck() {
             // Check compatability
             if(country.getName() === "Australia") {
                 if(W.map.getZoom() < 12) {
-                    return WazeWrap.Alerts.warning(ScriptName, 'Please Zoom in to at least Level 12.');
+                    return WazeWrap.Alerts.warning(SCRIPT_NAME, 'Please Zoom in to at least Level 12.');
                 }
                 else if(state.getName()) {
                     if(state.getName() === "Victoria")
@@ -146,15 +155,15 @@ function VersionCheck() {
                     }
                     else
                     {
-                        return WazeWrap.Alerts.warning(ScriptName, 'Sorry but we currently don\'t support loading maps from '+state.getName()+'.');
+                        return WazeWrap.Alerts.warning(SCRIPT_NAME, 'Sorry but we currently don\'t support loading maps from '+state.getName()+'.');
                     }
                 }
                 else if(state.getName() === '') {
-                    return WazeWrap.Alerts.warning(ScriptName, 'Please move closer to land.');
+                    return WazeWrap.Alerts.warning(SCRIPT_NAME, 'Please move closer to land.');
                 }
             }
             else {
-               return WazeWrap.Alerts.warning(ScriptName, 'Sorry but we currently don\'t support loading maps from other countries but Australia.');
+               return WazeWrap.Alerts.warning(SCRIPT_NAME, 'Sorry but we currently don\'t support loading maps from other countries but Australia.');
             }
         }
         else {
@@ -165,8 +174,8 @@ function VersionCheck() {
 
         $('#govmapGKey').change(() => {
             // If value is always guaranteed to be true/false, you can omit the `=== true`.
-            const govmapGKeyEnabled = document.controls.govmapGKey.value === true;
-            console.log("WME Send to AU GovMap GKey controls are "+govmapGKeyEnabled);
+            const GOVMAP_GKEY_ENABLED = document.controls.govmapGKey.value === true;
+            console.log("WME Send to AU GovMap GKey controls are "+GOVMAP_GKEY_ENABLED);
         });
 
 
@@ -259,7 +268,7 @@ function VersionCheck() {
         function activateGkey() {
             // Check if the mouse is over the map area
             // You may need to adjust the selector based on the Waze Map Editor structure
-            if (document.querySelector('#WazeMap:hover') && (event.key === 'g' || event.key === 'G') && govmapGKeyEnabled === true) {
+            if (document.querySelector('#WazeMap:hover') && (event.key === 'g' || event.key === 'G') && GOVMAP_GKEY_ENABLED === true) {
                 getMapLink();
             }
         }
