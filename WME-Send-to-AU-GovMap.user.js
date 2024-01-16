@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WME Send to AU GovMap
 // @namespace    https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap
-// @version      2024.01.15.01
+// @version      2024.01.17.01
 // @description  Opens your government's map to the coordinates currently in WME.
 // @author       DeviateFromThePlan, maporaptor & lacmacca
 // @license      MIT
@@ -18,11 +18,7 @@
     'use strict';
 
 // Updates informations
-var UPDATE_NOTES = "";
-const _WHATS_NEW_LIST = { // New in this version
-    '2024.01.11.01': 'Initial Version',
-    '2024.01.15.01': 'Added support for SA & NSW; Added an option to trigger script with the G-key, rather than the button; Renamed to WME Send to AU GovMap',
-};
+const UPDATE_NOTES = "Added support for SA & NSW; Added an option to trigger script with the G-key, rather than the button; Renamed to WME Send to AU GovMap";
 // Var declaration
 const SCRIPT_NAME = GM_info.script.name;
 const SCRIPT_VERSION = GM_info.script.version;
@@ -43,7 +39,7 @@ let NEEDED_PARAMS = {
     const vicGrid94 = '+proj=tmerc +lat_0=-37 +lon_0=145 +k=1 +x_0=2500000 +y_0=2500000 +ellps=GRS80 +units=m +no_defs';
 
     function bootstrap() {
-      if (typeof W === 'object' && W.userscripts?.state.isReady) {
+      if (typeof W === 'object' && W.userscripts?.state.isReady && WazeWrap.Interface) {
         init();
       } else {
         document.addEventListener('wme-ready', init, {
@@ -57,31 +53,7 @@ function VersionCheck() {
     ///////////////////////////////////////
     //         Check for updates         //
     ///////////////////////////////////////
-    if (localStorage.getItem('WMESTDVersion') === SCRIPT_VERSION && 'WMESTDVersion' in localStorage) {
-        // Do nothing
-    } else if ('WMESTDVersion' in localStorage) {
-        if(!WazeWrap.Interface) {
-            setTimeout(VersionCheck, 1000);
-            log("WazeWrap not ready, waiting");
-            return;
-        }
-        UPDATE_NOTES = "";
-        for (var key in _WHATS_NEW_LIST) {
-            if(SCRIPT_VERSION === key) {
-                UPDATE_NOTES = "What's New ?<br />";
-            }
-            if(UPDATE_NOTES != "")
-            {
-                UPDATE_NOTES = UPDATE_NOTES + "<br />" + key + ": " + _WHATS_NEW_LIST[key];
-            }
-        }
-        UPDATE_NOTES = UPDATE_NOTES + "<br />&nbsp;";
         WazeWrap.Interface.ShowScriptUpdate(SCRIPT_NAME, SCRIPT_VERSION, UPDATE_NOTES, "");
-        localStorage.setItem('WMESTDVersion', SCRIPT_VERSION);
-        $(".WWSUFooter a").text("Gitlab")
-    } else {
-        localStorage.setItem('WMESTDVersion', SCRIPT_VERSION);
-    }
 }
 
     function init() {
