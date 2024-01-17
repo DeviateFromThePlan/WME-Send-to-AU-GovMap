@@ -6,3 +6,6 @@ A script written by @DeviateFromThePlan, @maporaptor & @lacmacca.
 The Waze Forum for the script can be found [here](https://www.waze.com/forum/viewtopic.php?t=402600).
 #
 [![](https://i.ibb.co/JzHFKzj/button-install-here.png)](https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap/releases/latest/download/WME-Send-to-AU-GovMap.user.js)
+
+<a href="https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap/releases" alt="Total installs">
+        <img src="https://img.shields.io/github/downloads/DeviateFromThePlan/WME-Send-to-AU-GovMap/total?style=for-the-badge&label=Total%20installs%3A" /></a>
