@@ -40,7 +40,7 @@
             WMESTDState: '',
             WMESTDServer: '',
         };
-        
+
         function bootstrap() {
             if (typeof W === 'object' && W.userscripts?.state.isReady && WazeWrap.Interface) {
                 init();
@@ -52,14 +52,14 @@
         }
 
         function init() {
-            log_debug('Initialising');
+            logDebug('Initialising');
 
             try {
                 let updateMonitor = new WazeWrap.Alerts.ScriptUpdateMonitor(SCRIPT_NAME, SCRIPT_VERSION, DOWNLOAD_URL, GM_xmlhttpRequest);
                 updateMonitor.start();
             } catch (ex) {
                 // Report, but don't stop if ScriptUpdateMonitor fails.
-                log_error(ex.message)
+                logError(ex.message)
             }
 
             // Settings tab
@@ -67,9 +67,9 @@
             tabElement.innerHTML = ['<h4>WME Send to AU GovMap</h4>', '<h6>Controls</h6>', '<form id="controls" name="controls">', '<input type="checkbox" id="govmapGKey" name="govmapGKey" value="true"/> G Key', '</form>'].join('');
             WazeWrap.Interface.Tab('GovMap', tabElement.innerHTML, function () {});
 
-            $('#govmapGKey').change(function () {
-                GOVMAP_GKEY_ENABLED = this.checked;
-                log_debug('G-Key control ' + GOVMAP_GKEY_ENABLED);
+            document.getElementById('govmapGKey').addEventListener('change', (event) => {
+                GOVMAP_GKEY_ENABLED = event.target.checked;
+                logDebug('G-Key control ' + GOVMAP_GKEY_ENABLED);
             });
 
             // Footer button
@@ -81,7 +81,7 @@
 
             let mousePositionElement = document.getElementsByClassName('wz-map-ol-control-mouse-position')[0];
             mousePositionElement.parentNode.insertBefore(mapLinkElement, mousePositionElement.nextSibling);
-            
+
             document.addEventListener('keydown', (event) => {
                 // Check if the mouse is over the map area
                 // You may need to adjust the selector based on the Waze Map Editor structure
@@ -101,15 +101,15 @@
             if (country.getName() !== 'Australia') {
                 return WazeWrap.Alerts.warning(SCRIPT_NAME, "Sorry but we currently don't support loading maps from other countries but Australia.");
             }
-            
+
             if (W.map.getZoom() < 12) {
                 return WazeWrap.Alerts.warning(SCRIPT_NAME, 'Please Zoom in to at least Level 12.');
             }
-            
+
             if (!state.getName() || state.getName() === '') {
                 return WazeWrap.Alerts.warning(SCRIPT_NAME, 'Please move closer to land.');
             }
-            
+
             switch (state.getName()) {
                 case 'Victoria':
                     return openMapshareVic();
@@ -129,7 +129,7 @@
             let { lon, lat } = getWazeCenterCoords();
 
             if (isNaN(lat) || isNaN(lon)) {
-                log_debug('Invalid coordinates');
+                logDebug('Invalid coordinates');
                 return false;
             }
 
@@ -144,11 +144,11 @@
             } else if (wazeZoom >= 20) {
                 scale = scaleMin;
             }
-            
+
             for (let i = 6; i < wazeZoom; i++) {
                 scale /= 2;
             }
-            
+
             const mapURL = `https://mapshare.vic.gov.au/mapsharevic/?scale=${scale}&center=${x}%2C${y}`;
             window.open(mapURL, '_blank');
 
@@ -163,7 +163,7 @@
             let { lon, lat } = getWazeCenterCoords();
 
             if (isNaN(lat) || isNaN(lon)) {
-                log_debug('Invalid coordinates');
+                logDebug('Invalid coordinates');
                 return false;
             }
 
@@ -204,11 +204,11 @@
             return {lon: parseFloat(longitude.toFixed(decimalPlaces)), lat: parseFloat(latitude.toFixed(decimalPlaces))};
         }
 
-        function log_debug(message) {
+        function logDebug(message) {
             console.log(`${SCRIPT_NAME}: ${message}`);
         }
 
-        function log_error(message) {
+        function logError(message) {
             console.error(`${SCRIPT_NAME}: ${message}`);
         }
 
