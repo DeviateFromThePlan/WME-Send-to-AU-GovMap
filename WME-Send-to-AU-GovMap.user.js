@@ -94,31 +94,39 @@
         }
 
         function getMapLink() {
+            //Get Varriables
             let country = W.model.getTopCountry();
             let state = W.model.getTopState();
 
-            // Check compatability
-            if (country.getName() !== 'Australia') {
-                return WazeWrap.Alerts.warning(SCRIPT_NAME, "Sorry but we currently don't support loading maps from other countries but Australia.");
-            }
-
+            // Check Zoom
             if (W.map.getZoom() < 12) {
-                return WazeWrap.Alerts.warning(SCRIPT_NAME, 'Please Zoom in to at least Level 12.');
-            }
-
-            if (!state.getName() || state.getName() === '') {
-                return WazeWrap.Alerts.warning(SCRIPT_NAME, 'Please move closer to land.');
-            }
-
-            switch (state.getName()) {
-                case 'Victoria':
-                    return openMapshareVic();
-                case 'South Australia':
-                    return openLocationSAViewer();
-                case 'New South Wales':
-                    return openGisNSW();
-                default:
-                    return WazeWrap.Alerts.warning(SCRIPT_NAME, "Sorry but we currently don't support loading maps from " + state.getName() + '.');
+                 return WazeWrap.Alerts.warning(SCRIPT_NAME, 'Please Zoom in to at least Level 12.');
+                        }
+            else
+            {
+                //Check Country
+                if (country.getName() == 'Australia') {
+                    if (!state.getName() || state.getName() === '') {
+                        return WazeWrap.Alerts.warning(SCRIPT_NAME, 'Please move closer to land.');
+                    }
+                    else
+                    {
+                        switch (state.getName()) {
+                            case 'Victoria':
+                                return openMapshareVic();
+                            case 'South Australia':
+                                return openLocationSAViewer();
+                            case 'New South Wales':
+                                return openGisNSW();
+                            default:
+                                return WazeWrap.Alerts.warning(SCRIPT_NAME, "Sorry but we currently don't support loading maps from " + state.getName() + '.');
+                        }
+                    }
+                }
+                else
+                {
+                    return WazeWrap.Alerts.warning(SCRIPT_NAME, "Sorry but we currently don't support loading maps from other countries but Australia.");
+                }
             }
         }
 
