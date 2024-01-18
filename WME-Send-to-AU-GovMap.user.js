@@ -25,7 +25,7 @@
     const SCRIPT_NAME = GM_info.script.name;
     const SCRIPT_VERSION = GM_info.script.version;
     const DOWNLOAD_URL = 'https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap/releases/latest/download/WME-Send-to-AU-GovMap.user.js';
-    const UPDATE_NOTES = '<h4><u>Bug fixes:</u></h4><ul><li>Fixed a scale bug with VicMapshare.</li></ul><br><a href="https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap/releases" target="_blank"><img src="https://simpleicons.org/icons/github.svg" width=10> View Release Notes</a>';
+    const UPDATE_NOTES = '<h4><u>Bug fixes:</u></h4><ul><li>Fixed a scale bug with MapshareVic.</li></ul><br><a href="https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap/releases" target="_blank"><img src="https://simpleicons.org/icons/github.svg" width=10> View Release Notes</a>';
     
     if (document.URL.includes('https://qldglobe.information.qld.gov.au/')) {
         //INSERT QLDGLOBE CODE HERE
