@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WME Send to AU GovMap
 // @namespace    https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap
-// @version      2024.01.18.01
+// @version      2024.02.04.01
 // @description  Opens your government's map to the coordinates currently in WME.
 // @author       DeviateFromThePlan, maporaptor & lacmacca
 // @license      MIT
