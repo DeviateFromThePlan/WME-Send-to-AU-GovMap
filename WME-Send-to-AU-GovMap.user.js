@@ -79,6 +79,7 @@
             mapLinkElement.id = 'WME-showState';
             mapLinkElement.classList.add('wz-map-black-link');
             mapLinkElement.innerText = '🇦🇺 GovMap';
+            mapLinkElement.style = 'cursor: pointer';
             mapLinkElement.onclick = getMapLink;
 
             let mousePositionElement = document.getElementsByClassName('wz-map-ol-control-mouse-position')[0];
