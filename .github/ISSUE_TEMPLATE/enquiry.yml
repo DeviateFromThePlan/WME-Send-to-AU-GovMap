@@ -1,7 +1,7 @@
 name: "Enquiry"
 description: "Want to ask a question?"
 labels:
-  - 'bug'
+  - 'question'
 body:
     - type: textarea
       id: question
