@@ -179,7 +179,7 @@
                 scale = wazeZoom;
             }
 
-            const mapURL = `https://location.sa.gov.au/viewer/?map=hybrid&x=${lon}&y=${lat}&z=${scale}`;
+            const mapURL = `https://location.sa.gov.au/viewer/?map=hybrid&x=${lon}&y=${lat}&z=${scale}&uids=135,136`;
             window.open(mapURL, '_blank');
 
             //Prevent default 'a' tag functionality
