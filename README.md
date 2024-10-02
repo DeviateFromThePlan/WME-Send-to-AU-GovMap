@@ -6,7 +6,7 @@ Opens your government's map to the coordinates currently in WME.
 
 A script written by @DeviateFromThePlan, @maporaptor & @lacmacca.
 
-The Waze Forum for the script can be found [here](https://www.waze.com/forum/viewtopic.php?t=402600).
+The Waze Discuss for the script can be found [here](https://www.waze.com/discuss/t/script-wme-send-to-au-govmap/340375).
 # 
 <p align="center"><a href="https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap/releases/latest/download/WME-Send-to-AU-GovMap.user.js"><img src="https://i.ibb.co/JzHFKzj/button-install-here.png"></a></p>
 
