@@ -26,6 +26,6 @@ WA: ❌ - It is just a GIS server, but it seems to be handling different to the 
 
 ACT: ❌ - GIS server is currently a 404.
 
-TAS: ❌ - Haven’t looked yet, but it looks like a GIS so probably coming soon!
+TAS: ✅
 
 SA: ✅
