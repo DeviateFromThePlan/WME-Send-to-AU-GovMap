@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WME Send to AU GovMap
 // @namespace    https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap
-// @version      2024.02.04.01
+// @version      2025.01.12.01
 // @description  Opens your government's map to the coordinates currently in WME.
 // @author       DeviateFromThePlan, maporaptor & lacmacca
 // @license      MIT
@@ -27,8 +27,8 @@
     const SCRIPT_NAME = GM_info.script.name;
     const SCRIPT_VERSION = GM_info.script.version;
     const DOWNLOAD_URL = 'https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap/releases/latest/download/WME-Send-to-AU-GovMap.user.js';
-    const UPDATE_NOTES = '<h4><u>Bug fixes:</u></h4><ul><li>Fixed a scale bug with MapshareVic.</li></ul><br><a href="https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap/releases" target="_blank"><img src="https://simpleicons.org/icons/github.svg" width=10> View Release Notes</a>';
-    
+    const UPDATE_NOTES = '<h4><u>New features!</u></h4><ul><li>Support for Tasmania added!</li></ul><br><a href="https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap/releases" target="_blank"><img src="https://simpleicons.org/icons/github.svg" width=10> View Release Notes</a>';
+
     if (document.URL.includes('https://qldglobe.information.qld.gov.au/')) {
         //INSERT QLDGLOBE CODE HERE
     } else {
@@ -120,6 +120,8 @@
                     return openLocationSAViewer();
                 case 'New South Wales':
                     return openGisNSW();
+                case 'Tasmania':
+                    return openGisTAS();
                 default:
                     return WazeWrap.Alerts.warning(SCRIPT_NAME, "Sorry but we currently don't support loading maps from " + state.getName() + '.');
             }
@@ -193,6 +195,19 @@
             let { lon, lat } = getWazeCenterCoords();
 
             const mapURL = `https://www.arcgis.com/home/webmap/viewer.html?basemapUrl=http%3A%2F%2Fmaps.six.nsw.gov.au%2Farcgis%2Frest%2Fservices%2Fpublic%2FNSW_Base_Map%2FMapServer&find=${lon},${lat}`;
+            window.open(mapURL, '_blank');
+
+            //Prevent default 'a' tag functionality
+            return false;
+        }
+
+        //////////////
+        // TASMANIA //
+        //////////////
+        function openGisTAS() {
+            let { lon, lat } = getWazeCenterCoords();
+
+            const mapURL = `https://www.arcgis.com/home/webmap/viewer.html?basemapUrl=https://services.thelist.tas.gov.au/arcgis/rest/services/Basemaps/SimpleBasemap/MapServer&basemapReferenceUrl=https://services.thelist.tas.gov.au/arcgis/rest/services/Public/TopographyAndRelief/MapServer/7&url=https://services.thelist.tas.gov.au/arcgis/rest/services/Public/TopographyAndRelief/MapServer/7&find=${lon},${lat}`;
             window.open(mapURL, '_blank');
 
             //Prevent default 'a' tag functionality
