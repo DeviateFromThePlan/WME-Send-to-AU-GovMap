@@ -26,7 +26,7 @@
     const SCRIPT_NAME = GM_info.script.name;
     const SCRIPT_VERSION = GM_info.script.version;
     const DOWNLOAD_URL = 'https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap/releases/latest/download/WME-Send-to-AU-GovMap.user.js';
-    const UPDATE_NOTES = '<h4><u>New features!</u></h4><ul><li>Support for Western Australia added!</li></ul><br><a href="https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap/releases" target="_blank"><img src="https://simpleicons.org/icons/github.svg" width=10> View Release Notes</a>';
+    const UPDATE_NOTES = '<h4><u>New features!</u></h4><ul><li>Support for Western Australia added!</li><li>Support for Australian Capital Territory added!</li></ul><br><a href="https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap/releases" target="_blank"><img src="https://simpleicons.org/icons/github.svg" width=10> View Release Notes</a>';
 
         const WGS_84 = '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs';
         const VIC_GRID_94 = '+proj=tmerc +lat_0=-37 +lon_0=145 +k=1 +x_0=2500000 +y_0=2500000 +ellps=GRS80 +units=m +no_defs';
@@ -120,6 +120,8 @@
                     return openGisTAS();
                 case 'Western Australia':
                     return openGisWA();
+                case 'Australian Capital Territory':
+                    return openGisACT();
                 default:
                     return WazeWrap.Alerts.warning(SCRIPT_NAME, "Sorry but we currently don't support loading maps from " + state.getName() + '.');
             }
@@ -219,6 +221,19 @@
             let { lon, lat } = getWazeCenterCoords();
 
             const mapURL = `https://www.arcgis.com/home/webmap/viewer.html?basemapUrl=https://gisservices.mainroads.wa.gov.au/arcgis/rest/services/OpenData/RoadAssets_DataPortal/MapServer/?layers=show:11&url=https://gisservices.mainroads.wa.gov.au/arcgis/rest/services/OpenData/RoadAssets_DataPortal/MapServer/?layers=show:17&find=${lon},${lat}`;
+            window.open(mapURL, '_blank');
+
+            //Prevent default 'a' tag functionality
+            return false;
+        }
+
+        //////////////////////////////////
+        // AUSTRALIAN CAPITAL TERRITORY //
+        //////////////////////////////////
+        function openGisACT() {
+            let { lon, lat } = getWazeCenterCoords();
+
+            const mapURL = `https://actmapi-actgov.opendata.arcgis.com/datasets/actgov-road-centrelines/explore?location=${lat}%2C${lon}%2C16.00`;
             window.open(mapURL, '_blank');
 
             //Prevent default 'a' tag functionality
