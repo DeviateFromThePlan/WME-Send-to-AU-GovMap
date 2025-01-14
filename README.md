@@ -22,9 +22,9 @@ VIC: ✅
 
 NT: ❌ - We don’t know if there is a way to inject coordinates into the link, or whether it is GIS, so unlikely to get support (but not impossible!).
 
-WA: ❌ - It is just a GIS server, but it seems to be handling different to the rest. There is potential for it to be added in the future however.
+WA: ✅
 
-ACT: ❌ - GIS server is currently a 404.
+ACT: ✅
 
 TAS: ✅
 
