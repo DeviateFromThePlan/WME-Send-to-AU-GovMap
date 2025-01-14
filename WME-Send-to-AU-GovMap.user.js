@@ -1,12 +1,11 @@
 // ==UserScript==
 // @name         WME Send to AU GovMap
 // @namespace    https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap
-// @version      2025.01.12.01
+// @version      2025.01.14.01
 // @description  Opens your government's map to the coordinates currently in WME.
 // @author       DeviateFromThePlan, maporaptor & lacmacca
 // @license      MIT
 // @match        *://*.waze.com/*editor*
-// @match        https://qldglobe.information.qld.gov.au*
 // @exclude      *://*.waze.com/user/editor*
 // @grant        none
 // @require      https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.5/proj4.js
@@ -27,11 +26,8 @@
     const SCRIPT_NAME = GM_info.script.name;
     const SCRIPT_VERSION = GM_info.script.version;
     const DOWNLOAD_URL = 'https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap/releases/latest/download/WME-Send-to-AU-GovMap.user.js';
-    const UPDATE_NOTES = '<h4><u>New features!</u></h4><ul><li>Support for Tasmania added!</li></ul><br><a href="https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap/releases" target="_blank"><img src="https://simpleicons.org/icons/github.svg" width=10> View Release Notes</a>';
+    const UPDATE_NOTES = '<h4><u>New features!</u></h4><ul><li>Support for Western Australia added!</li></ul><br><a href="https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap/releases" target="_blank"><img src="https://simpleicons.org/icons/github.svg" width=10> View Release Notes</a>';
 
-    if (document.URL.includes('https://qldglobe.information.qld.gov.au/')) {
-        //INSERT QLDGLOBE CODE HERE
-    } else {
         const WGS_84 = '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs';
         const VIC_GRID_94 = '+proj=tmerc +lat_0=-37 +lon_0=145 +k=1 +x_0=2500000 +y_0=2500000 +ellps=GRS80 +units=m +no_defs';
         let SEGMENT_COUNT = 0;
@@ -122,6 +118,8 @@
                     return openGisNSW();
                 case 'Tasmania':
                     return openGisTAS();
+                case 'Western Australia':
+                    return openGisWA();
                 default:
                     return WazeWrap.Alerts.warning(SCRIPT_NAME, "Sorry but we currently don't support loading maps from " + state.getName() + '.');
             }
@@ -214,6 +212,20 @@
             return false;
         }
 
+        ///////////////////////
+        // WESTERN AUSTRALIA //
+        ///////////////////////
+        function openGisWA() {
+            let { lon, lat } = getWazeCenterCoords();
+
+            const mapURL = `https://www.arcgis.com/home/webmap/viewer.html?basemapUrl=https://gisservices.mainroads.wa.gov.au/arcgis/rest/services/OpenData/RoadAssets_DataPortal/MapServer/?layers=show:11&url=https://gisservices.mainroads.wa.gov.au/arcgis/rest/services/OpenData/RoadAssets_DataPortal/MapServer/?layers=show:17&find=${lon},${lat}`;
+            window.open(mapURL, '_blank');
+
+            //Prevent default 'a' tag functionality
+            return false;
+        }
+
+
         function getWazeCenterCoords() {
             let { lon: wazeLon, lat: wazeLat } = W.map.getCenter();
             const { lon, lat } = WazeWrap.Geometry.ConvertTo4326(wazeLon, wazeLat);
@@ -233,5 +245,4 @@
         }
 
         bootstrap();
-    }
 })();
