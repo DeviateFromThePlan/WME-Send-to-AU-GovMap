@@ -14,13 +14,13 @@ The forum thread for the script can be found on Waze Discuss [here](https://www.
 
 ## Current State Compatability:
 
-QLD: ❌ - It is hosted on an GIS server, so possible if we constructed the layers ourself. The QldGlobe team confirmed they don't support this, however I wonder if I could submit a feature request.
+QLD: ✅
 
 NSW: ✅
 
 VIC: ✅
 
-NT: ❌ - We don’t know if there is a way to inject coordinates into the link, or whether it is GIS, so unlikely to get support (but not impossible!).
+NT: ✅
 
 WA: ✅
 
