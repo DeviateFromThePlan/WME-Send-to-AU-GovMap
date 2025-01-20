@@ -1,263 +1,381 @@
 // ==UserScript==
 // @name         WME Send to AU GovMap
 // @namespace    https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap
-// @version      2025.01.14.01
+// @version      2025.01.20.01
 // @description  Opens your government's map to the coordinates currently in WME.
 // @author       DeviateFromThePlan, maporaptor & lacmacca
 // @license      MIT
 // @match        *://*.waze.com/*editor*
+// @match        *://*.qldglobe.information.qld.gov.au/*
+// @match        *://*.nrmaps.nt.gov.au/nrmaps.htm*
 // @exclude      *://*.waze.com/user/editor*
 // @grant        none
 // @require      https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.5/proj4.js
 // @require      https://greasyfork.org/scripts/24851-wazewrap/code/WazeWrap.js
+// @homepage     https://www.waze.com/discuss/t/340375
 // @downloadURL  https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap/releases/latest/download/WME-Send-to-AU-GovMap.user.js
 // @updateURL    https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap/releases/latest/download/WME-Send-to-AU-GovMap.user.js
 // @supportURL   https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap/issues/new/choose
 // @iconURL      https://i.ibb.co/k8RdMh0/image.png
 // ==/UserScript==
 
-/* global W */
 /* global WazeWrap */
 /* global proj4 */
 
-(function () {
-    'use strict';
+if (window.location.hostname === 'www.waze.com') {
+const ScriptName = GM_info.script.name;
+const ScriptVersion = GM_info.script.version;
+const ReleaseNotes = '<br><a href="https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap/releases" target="_blank"><img src="https://simpleicons.org/icons/github.svg" width=10> View Release Notes</a>';
+const UpdateNotes = '<h4><u>New features!</u></h4><ul><li>Script is now ready for the new WME SDK.</li><li>Support for Queensland added!</li><li>Support for the Northern Territory added!</li></ul>';
+let wmeSDK;
 
-    const SCRIPT_NAME = GM_info.script.name;
-    const SCRIPT_VERSION = GM_info.script.version;
-    const DOWNLOAD_URL = 'https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap/releases/latest/download/WME-Send-to-AU-GovMap.user.js';
-    const UPDATE_NOTES = '<h4><u>New features!</u></h4><ul><li>Support for Western Australia added!</li><li>Support for Australian Capital Territory added!</li></ul><br><a href="https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap/releases" target="_blank"><img src="https://simpleicons.org/icons/github.svg" width=10> View Release Notes</a>';
+function log(message) {
+    if (typeof message === 'string') {
+        console.log(ScriptName+': ' + message);
+    } else {
+        console.log(ScriptName+': ', message);
+    }
+}
 
-        const WGS_84 = '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs';
-        const VIC_GRID_94 = '+proj=tmerc +lat_0=-37 +lon_0=145 +k=1 +x_0=2500000 +y_0=2500000 +ellps=GRS80 +units=m +no_defs';
-        let SEGMENT_COUNT = 0;
-        let ACTIONS_LOADED = 0;
-        let GOVMAP_GKEY_ENABLED = false;
-        let NEEDED_PARAMS = {
-            WMESTDCountry: '',
-            WMESTDState: '',
-            WMESTDServer: '',
-        };
+// the sdk init function will be available after the WME is initialized
+function WMESendtoAUGovMap_bootstrap() {
+    if (!wmeSDK.DataModel.Countries.getTopCountry() || !WazeWrap.Ready) {
+        setTimeout(WMESendtoAUGovMap_bootstrap, 250);
+        return;
+    }
 
-        function bootstrap() {
-            if (typeof W === 'object' && W.userscripts?.state.isReady && WazeWrap.Interface) {
-                init();
-            } else {
-                document.addEventListener('wme-ready', init, {
-                    once: true,
-                });
-            }
+    if (wmeSDK.State.isReady) {
+        WMESendtoAUGovMap_init();
+    } else {
+        wmeSDK.Events.once({ eventName: "wme-ready" }).then(WMESendtoAUGovMap_init);
+    }
+}
+
+const WGS_84 = '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs';
+const VIC_GRID_94 = '+proj=tmerc +lat_0=-37 +lon_0=145 +k=1 +x_0=2500000 +y_0=2500000 +ellps=GRS80 +units=m +no_defs';
+
+function WMESendtoAUGovMap_init() {
+    log("Start");
+
+    WazeWrap.Interface.ShowScriptUpdate(ScriptName, ScriptVersion, UpdateNotes+ReleaseNotes, '');
+
+    // Footer button
+    let mapLinkElement = document.createElement('a');
+    mapLinkElement.id = 'WME-showState';
+    mapLinkElement.classList.add('wz-map-black-link');
+    mapLinkElement.innerText = '🇦🇺 GovMap (Beta)';
+    mapLinkElement.style = 'cursor: pointer';
+    mapLinkElement.onclick = getMapLink;
+
+    let mousePositionElement = document.getElementsByClassName('wz-map-ol-control-mouse-position')[0];
+    mousePositionElement.parentNode.insertBefore(mapLinkElement, mousePositionElement.nextSibling);
+
+    function getMapLink() {
+        let country = wmeSDK.DataModel.Countries.getTopCountry();
+        let state = wmeSDK.DataModel.States.getTopState();
+
+        // Check compatability
+        if (country.name !== 'Australia') {
+            return WazeWrap.Alerts.warning(ScriptName, "Sorry but we currently don't support loading maps from other countries but Australia.");
         }
 
-        function init() {
-            logDebug('Initialising');
-
-            try {
-                let updateMonitor = new WazeWrap.Alerts.ScriptUpdateMonitor(SCRIPT_NAME, SCRIPT_VERSION, DOWNLOAD_URL, GM_xmlhttpRequest);
-                updateMonitor.start();
-            } catch (ex) {
-                // Report, but don't stop if ScriptUpdateMonitor fails.
-                logError(ex.message)
-            }
-
-            // Settings tab
-            let tabElement = document.createElement('div');
-            tabElement.innerHTML = ['<h4>WME Send to AU GovMap</h4>', '<h6>Controls</h6>', '<form id="controls" name="controls">', '<input type="checkbox" id="govmapGKey" name="govmapGKey" value="true"/> G Key', '</form>'].join('');
-            WazeWrap.Interface.Tab('GovMap', tabElement.innerHTML, function () {});
-
-            document.getElementById('govmapGKey').addEventListener('change', (event) => {
-                GOVMAP_GKEY_ENABLED = event.target.checked;
-                logDebug('G-Key control ' + GOVMAP_GKEY_ENABLED);
-            });
-
-            // Footer button
-            let mapLinkElement = document.createElement('a');
-            mapLinkElement.id = 'WME-showState';
-            mapLinkElement.classList.add('wz-map-black-link');
-            mapLinkElement.innerText = '🇦🇺 GovMap';
-            mapLinkElement.style = 'cursor: pointer';
-            mapLinkElement.onclick = getMapLink;
-
-            let mousePositionElement = document.getElementsByClassName('wz-map-ol-control-mouse-position')[0];
-            mousePositionElement.parentNode.insertBefore(mapLinkElement, mousePositionElement.nextSibling);
-
-            document.addEventListener('keydown', (event) => {
-                // Check if the mouse is over the map area
-                // You may need to adjust the selector based on the Waze Map Editor structure
-                if (GOVMAP_GKEY_ENABLED && event.key.toLowerCase() === 'g' && document.querySelector('#WazeMap:hover')) {
-                    getMapLink();
-                }
-            });
-
-            WazeWrap.Interface.ShowScriptUpdate(SCRIPT_NAME, SCRIPT_VERSION, UPDATE_NOTES, '');
+        if (!state.name || state.name == null) {
+            return WazeWrap.Alerts.warning(ScriptName, "Please move closer to land.");
         }
 
-        function getMapLink() {
-            let country = W.model.getTopCountry();
-            let state = W.model.getTopState();
+        switch (state.name) {
+            case 'Victoria':
+                return openMapshareVic();
+            case 'South Australia':
+                return openLocationSAViewer();
+            case 'New South Wales':
+                return openGisNSW();
+            case 'Tasmania':
+                return openGisTAS();
+            case 'Western Australia':
+                return openGisWA();
+            case 'Australian Capital Territory':
+                return openGisACT();
+            case 'Queensland':
+                return openQueenslandGlobe();
+            case 'Northern Territory':
+                return openNRMaps();
+            default:
+                return WazeWrap.Alerts.warning(ScriptName, "Sorry but we currently don't support loading maps from " + state.name + '.');
+        }
+    }
 
-            // Check compatability
-            if (country.getName() !== 'Australia') {
-                return WazeWrap.Alerts.warning(SCRIPT_NAME, "Sorry but we currently don't support loading maps from other countries but Australia.");
-            }
+    ////////////////
+    //  VICTORIA  //
+    ////////////////
+    function openMapshareVic() {
+        let { lon, lat } = wmeSDK.Map.getMapCenter();
 
-            if (W.map.getZoom() < 12) {
-                return WazeWrap.Alerts.warning(SCRIPT_NAME, 'Please Zoom in to at least Level 12.');
-            }
-
-            if (!state.getName() || state.getName() === '') {
-                return WazeWrap.Alerts.warning(SCRIPT_NAME, 'Please move closer to land.');
-            }
-
-            switch (state.getName()) {
-                case 'Victoria':
-                    return openMapshareVic();
-                case 'South Australia':
-                    return openLocationSAViewer();
-                case 'New South Wales':
-                    return openGisNSW();
-                case 'Tasmania':
-                    return openGisTAS();
-                case 'Western Australia':
-                    return openGisWA();
-                case 'Australian Capital Territory':
-                    return openGisACT();
-                default:
-                    return WazeWrap.Alerts.warning(SCRIPT_NAME, "Sorry but we currently don't support loading maps from " + state.getName() + '.');
-            }
+        if (isNaN(lat) || isNaN(lon)) {
+            log('Invalid coordinates');
+            return false;
         }
 
-        ////////////////
-        //  VICTORIA  //
-        ////////////////
-        function openMapshareVic() {
-            let { lon, lat } = getWazeCenterCoords();
+        let [x, y] = proj4(WGS_84, VIC_GRID_94, [lon, lat]);
+        let scaleMin = 976.5644531289063;
+        let scaleMax = 8000016.000032;
+        let scale = scaleMax;
+        let wazeZoom = wmeSDK.Map.getZoomLevel();
 
-            if (isNaN(lat) || isNaN(lon)) {
-                logDebug('Invalid coordinates');
-                return false;
-            }
-
-            let [x, y] = proj4(WGS_84, VIC_GRID_94, [lon, lat]);
-            let scaleMin = 976.5644531289063;
-            let scaleMax = 8000016.000032;
-            let scale = scaleMax;
-            let wazeZoom = W.map.getZoom();
-
-            if (wazeZoom <= 5) {
-                scale = scaleMax;
-            } else if (wazeZoom >= 20) {
-                scale = scaleMin;
-            }
-            else
-            {
-                for (let i = 6; i < wazeZoom; i++) {
+        if (wazeZoom <= 5) {
+            scale = scaleMax;
+        } else if (wazeZoom >= 20) {
+            scale = scaleMin;
+        }
+        else
+        {
+            for (let i = 6; i < wazeZoom; i++) {
                 scale /= 2;
-                }
             }
+        }
 
-            const mapURL = `https://mapshare.vic.gov.au/mapsharevic/?scale=${scale}&center=${x}%2C${y}`;
-            window.open(mapURL, '_blank');
+        const mapURL = `https://mapshare.vic.gov.au/mapsharevic/?scale=${scale}&center=${x}%2C${y}`;
+        window.open(mapURL, '_blank');
 
-            //Prevent default 'a' tag functionality
+        //Prevent default 'a' tag functionality
+        return false;
+    }
+
+    ///////////////////////
+    //  SOUTH AUSTRALIA  //
+    ///////////////////////
+    function openLocationSAViewer() {
+        let { lon, lat } = wmeSDK.Map.getMapCenter();
+
+        if (isNaN(lat) || isNaN(lon)) {
+            log('Invalid coordinates');
             return false;
         }
 
-        ///////////////////////
-        //  SOUTH AUSTRALIA  //
-        ///////////////////////
-        function openLocationSAViewer() {
-            let { lon, lat } = getWazeCenterCoords();
+        let wazeZoom = wmeSDK.Map.getZoomLevel();
+        let scale = null;
 
-            if (isNaN(lat) || isNaN(lon)) {
-                logDebug('Invalid coordinates');
-                return false;
-            }
-
-            let wazeZoom = W.map.getZoom();
-            let scale = null;
-
-            if (wazeZoom >= 6) {
-                scale = wazeZoom;
-            }
-
-            const mapURL = `https://location.sa.gov.au/viewer/?map=hybrid&x=${lon}&y=${lat}&z=${scale}`;
-            window.open(mapURL, '_blank');
-
-            //Prevent default 'a' tag functionality
-            return false;
+        if (wazeZoom >= 6) {
+            scale = wazeZoom;
         }
 
-        /////////////////////
-        // NEW SOUTH WALES //
-        /////////////////////
-        function openGisNSW() {
-            let { lon, lat } = getWazeCenterCoords();
+        const mapURL = `https://location.sa.gov.au/viewer/?map=hybrid&x=${lon}&y=${lat}&z=${scale}&uids=135,136`;
+        window.open(mapURL, '_blank');
 
-            const mapURL = `https://www.arcgis.com/home/webmap/viewer.html?basemapUrl=http%3A%2F%2Fmaps.six.nsw.gov.au%2Farcgis%2Frest%2Fservices%2Fpublic%2FNSW_Base_Map%2FMapServer&find=${lon},${lat}`;
-            window.open(mapURL, '_blank');
+        //Prevent default 'a' tag functionality
+        return false;
+    }
 
-            //Prevent default 'a' tag functionality
-            return false;
+    /////////////////////
+    // NEW SOUTH WALES //
+    /////////////////////
+    function openGisNSW() {
+        let { lon, lat } = wmeSDK.Map.getMapCenter();
+        let scale = wmeSDK.Map.getZoomLevel();
+
+        const mapURL = `https://www.arcgis.com/home/webmap/viewer.html?basemapUrl=http%3A%2F%2Fmaps.six.nsw.gov.au%2Farcgis%2Frest%2Fservices%2Fpublic%2FNSW_Base_Map%2FMapServer&center=${lon},${lat}&level=${scale}`;
+        window.open(mapURL, '_blank');
+
+        //Prevent default 'a' tag functionality
+        return false;
+    }
+
+    //////////////
+    // TASMANIA //
+    //////////////
+    function openGisTAS() {
+        let { lon, lat } = wmeSDK.Map.getMapCenter();
+
+        let scale;
+        let wazeZoom = wmeSDK.Map.getZoomLevel();
+
+        if (wazeZoom >= 19) {
+            scale = 18;
+        }
+        else
+        {
+            scale = wazeZoom;
         }
 
-        //////////////
-        // TASMANIA //
-        //////////////
-        function openGisTAS() {
-            let { lon, lat } = getWazeCenterCoords();
+        const mapURL = `https://www.arcgis.com/home/webmap/viewer.html?basemapUrl=https%3A%2F%2Fservices.thelist.tas.gov.au%2Farcgis%2Frest%2Fservices%2FBasemaps%2FSimpleBasemap%2FMapServer&basemapReferenceUrl=https%3A%2F%2Fservices.thelist.tas.gov.au%2Farcgis%2Frest%2Fservices%2FPublic%2FTopographyAndRelief%2FMapServer%2F7&url=https%3A%2F%2Fservices.thelist.tas.gov.au%2Farcgis%2Frest%2Fservices%2FPublic%2FTopographyAndRelief%2FMapServer%2F7&center=${lon},${lat}&level=${scale}`;
+        window.open(mapURL, '_blank');
 
-            const mapURL = `https://www.arcgis.com/home/webmap/viewer.html?basemapUrl=https://services.thelist.tas.gov.au/arcgis/rest/services/Basemaps/SimpleBasemap/MapServer&basemapReferenceUrl=https://services.thelist.tas.gov.au/arcgis/rest/services/Public/TopographyAndRelief/MapServer/7&url=https://services.thelist.tas.gov.au/arcgis/rest/services/Public/TopographyAndRelief/MapServer/7&find=${lon},${lat}`;
-            window.open(mapURL, '_blank');
+        //Prevent default 'a' tag functionality
+        return false;
+    }
 
-            //Prevent default 'a' tag functionality
-            return false;
+    ///////////////////////
+    // WESTERN AUSTRALIA //
+    ///////////////////////
+    function openGisWA() {
+        let { lon, lat } = wmeSDK.Map.getMapCenter();
+
+        const mapURL = `https://www.arcgis.com/home/webmap/viewer.html?basemapUrl=https://gisservices.mainroads.wa.gov.au/arcgis/rest/services/OpenData/RoadAssets_DataPortal/MapServer/?layers=show:11&url=https://gisservices.mainroads.wa.gov.au/arcgis/rest/services/OpenData/RoadAssets_DataPortal/MapServer/?layers=show:17&find=${lon},${lat}`;
+        window.open(mapURL, '_blank');
+
+        //Prevent default 'a' tag functionality
+        return false;
+    }
+
+    //////////////////////////////////
+    // AUSTRALIAN CAPITAL TERRITORY //
+    //////////////////////////////////
+    function openGisACT() {
+        let { lon, lat } = wmeSDK.Map.getMapCenter();
+        let scale = wmeSDK.Map.getZoomLevel();
+
+        const mapURL = `https://actmapi-actgov.opendata.arcgis.com/datasets/actgov-road-centrelines/explore?location=${lat}%2C${lon}%2C${scale}`;
+        window.open(mapURL, '_blank');
+
+        //Prevent default 'a' tag functionality
+        return false;
+    }
+
+	//////////////////
+    //  QUEENSLAND  //
+    //////////////////
+
+        function openQueenslandGlobe() {
+            let { lon, lat } = wmeSDK.Map.getMapCenter();
+
+         let wazeZoom = wmeSDK.Map.getZoomLevel();
+            const BASE_SCALE = 564;
+
+        // Calculate scale factor
+        const scale = BASE_SCALE * Math.pow(2, 20 - wazeZoom);
+
+        const mapURL = `https://qldglobe.information.qld.gov.au/?center=${lat},${lon}&scale=${scale}`;
+        window.open(mapURL, '_blank');
+
+        //Prevent default 'a' tag functionality
+        return false;
+    }
+
+
+	///////////////////////////
+    //  NORTHERN TERRITORY  //
+    //////////////////////////
+
+            function openNRMaps() {
+            let { lon, lat } = wmeSDK.Map.getMapCenter();
+
+                         let wazeZoom = wmeSDK.Map.getZoomLevel();
+            const BASE_SCALE = 564;
+
+        // Calculate scale factor
+        const scale = BASE_SCALE * Math.pow(2, 20 - wazeZoom);
+        const mapURL = `https://nrmaps.nt.gov.au/nrmaps.htm#center=${lat},${lon}&scale=${scale}`;
+        window.open(mapURL, '_blank');
+
+        //Prevent default 'a' tag functionality
+        return false;
+    }
+
+
+    displayChangelog();
+
+    log("Done");
+
+}
+    	window.SDK_INITIALIZED.then(() => {
+    // initialize the sdk with your script id and script name
+    wmeSDK = getWmeSdk({scriptId: "wme-send-to-AU-GovMap", scriptName: "Send to AU GovMap"});
+    WMESendtoAUGovMap_bootstrap();
+});
+
+function displayChangelog() {
+    if (!WazeWrap.Interface) {
+        setTimeout(displayChangelog, 1000);
+        return;
+    }
+}
+}
+
+// Helper function to introduce delays
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Function to wait until the element is available in the DOM
+function waitForElement(selector, callback) {
+	const interval = setInterval(() => {
+		const element = document.querySelector(selector);
+		if (element) {
+			clearInterval(interval);
+			callback(element);
+		}
+	}, 100);
+}
+
+// Get hash parameters from url
+function getHashParams() {
+	const hash = window.location.hash.substring(1); // Remove the leading '#'
+	const params = new URLSearchParams(hash);
+	const center = params.get('center');
+	const scale = params.get('scale');
+	return { center, scale };
+}
+
+// Get cordinates from parameters
+function getCords(cords) {
+	const coordinates = cords.split(',');
+	if (coordinates.length === 2) {
+		const lat = parseFloat(coordinates[0]);
+		const lon = parseFloat(coordinates[1]);
+		if (!isNaN(lat) && !isNaN(lon)) {
+			return { lat, lon };
+		}
+	}
+}
+
+// Simulate changing the value of an input
+function changeValue(selector, value) {
+    const inputElement = document.querySelector(selector);
+    if (inputElement) {
+       inputElement.value = value;
+       inputElement.dispatchEvent(new Event('input', { bubbles: true })); // Ensure the change is registered
+    }
+	else {
+       console.error(`Element not found for selector: ${selector}`);
+    }
+}
+
+// Simulate a click on an element
+function clickElement(selector) {
+	const element = document.querySelector(selector);
+	if (element) {
+		element.click();
+		}
+		else {
+		console.error(`Element not found for selector: ${selector}`);
         }
+    }
 
-        ///////////////////////
-        // WESTERN AUSTRALIA //
-        ///////////////////////
-        function openGisWA() {
-            let { lon, lat } = getWazeCenterCoords();
+// Evaluate the XPath and find element
+function clickElementByXPath(xpath) {
+    const element = document.evaluate(
+        xpath,
+        document,
+        null,
+        XPathResult.FIRST_ORDERED_NODE_TYPE,
+        null
+    ).singleNodeValue;
 
-            const mapURL = `https://www.arcgis.com/home/webmap/viewer.html?basemapUrl=https://gisservices.mainroads.wa.gov.au/arcgis/rest/services/OpenData/RoadAssets_DataPortal/MapServer/?layers=show:11&url=https://gisservices.mainroads.wa.gov.au/arcgis/rest/services/OpenData/RoadAssets_DataPortal/MapServer/?layers=show:17&find=${lon},${lat}`;
-            window.open(mapURL, '_blank');
+    if (element) {
+        console.log(`Element found for XPath '${xpath}'. Clicking it now.`);
+        element.click(); // Trigger the click event
+    } else {
+        console.warn(`No element found for XPath '${xpath}'.`);
+    }
+}
 
-            //Prevent default 'a' tag functionality
-            return false;
-        }
+// NR Maps Automation
+async function runAutomationNT(){const{center:e,scale:t}=getHashParams(),n=getCords(e),{lat:c,lon:o}=n;waitForElement("#ext-gen233",(()=>{clickElement("#ext-gen233")})),waitForElement("#ext-comp-1220",(()=>{changeValue("#ext-comp-1220",c)})),waitForElement("#ext-comp-1221",(()=>{changeValue("#ext-comp-1221",o)})),waitForElement("#ext-gen493",(()=>{clickElement("#ext-gen493")})),waitForElement("#ext-gen492",(()=>{clickElement("#ext-gen492")})),waitForElement("#ext-gen595",(()=>{clickElementByXPath('//*[@id="ext-gen595"]/div[1]')})),waitForElement("#ext-gen436",(function(){const e=document.querySelector("#ext-gen436");e&&(e.click(),waitForElement("#ext-comp-1147",(function(){const e=document.querySelector("#ext-comp-1147");if(e){e.value=t,e.dispatchEvent(new Event("input"));const n=new KeyboardEvent("keydown",{key:"Enter",keyCode:13,bubbles:!0,cancelable:!0});e.dispatchEvent(n)}})))})),waitForElement("#ext-gen438",(()=>{clickElement("#ext-gen438")}))}
 
-        //////////////////////////////////
-        // AUSTRALIAN CAPITAL TERRITORY //
-        //////////////////////////////////
-        function openGisACT() {
-            let { lon, lat } = getWazeCenterCoords();
-
-            const mapURL = `https://actmapi-actgov.opendata.arcgis.com/datasets/actgov-road-centrelines/explore?location=${lat}%2C${lon}%2C16.00`;
-            window.open(mapURL, '_blank');
-
-            //Prevent default 'a' tag functionality
-            return false;
-        }
+// QLD Globe Automation
+async function runAutomationQLD(){let t=new URLSearchParams(window.location.search),e=t.get("center"),n=t.get("scale");if(t&&e&&n){let a=getCords(e);console.log(`Using coordinates: Latitude = ${a.lat}, Longitude = ${a.lon}`),await new Promise(t=>waitForElement("div.terms > div",()=>{clickElement("div.terms > div"),t()}));let i=async(t,e=0)=>{let n=document.querySelector(t);n?(n.click(),console.log(`Clicked: ${t}`),e&&await delay(e)):console.warn(`${t} not found. Skipping...`)};await i("#mCSB_7_container > a",2e3),await i("li.contains-icon-search i",1e3),await i("#sidebar-search li:nth-of-type(6)",1e3),changeValue("#sidebar-search input",`${a.lat},${a.lon}`),console.log(`Entered coordinates: ${a.lat},${a.lon}`),await delay(500);let o=document.querySelector("div.form i");o?(o.addEventListener("click",async()=>{console.log("Search button clicked. Waiting for action to complete..."),await delay(2e3);let t=document.querySelector("#scale-control input");t?(t.value=n,t.dispatchEvent(new Event("input",{bubbles:!0})),t.dispatchEvent(new Event("change",{bubbles:!0})),console.log(`Scale set to: ${n}`)):console.warn("Scale input not found. Skipping...")}),o.click(),console.log("Submitted the search.")):console.warn("Search button not found. Skipping..."),console.log("Automation completed.")}else console.log("Nothing to automate.")}
 
 
-        function getWazeCenterCoords() {
-            let { lon: wazeLon, lat: wazeLat } = W.map.getCenter();
-            const { lon, lat } = WazeWrap.Geometry.ConvertTo4326(wazeLon, wazeLat);
-            return roundCoordinates(lon, lat);
-        }
+// Check if we are on the Queensland Globe website
+"qldglobe.information.qld.gov.au"===window.location.hostname&&(console.log("Detected Queensland Globe page."),window.addEventListener("load",(()=>{console.log("Page loaded. Starting automation..."),runAutomationQLD()})));
 
-        function roundCoordinates(longitude, latitude, decimalPlaces = 4) {
-            return {lon: parseFloat(longitude.toFixed(decimalPlaces)), lat: parseFloat(latitude.toFixed(decimalPlaces))};
-        }
-
-        function logDebug(message) {
-            console.log(`${SCRIPT_NAME}: ${message}`);
-        }
-
-        function logError(message) {
-            console.error(`${SCRIPT_NAME}: ${message}`);
-        }
-
-        bootstrap();
-})();
+// Check if we are on the NR Maps website
+"nrmaps.nt.gov.au"===window.location.hostname&&(console.log("Detected NR Maps page."),window.addEventListener("load",(()=>{console.log("Page loaded. Starting automation..."),runAutomationNT()})));
