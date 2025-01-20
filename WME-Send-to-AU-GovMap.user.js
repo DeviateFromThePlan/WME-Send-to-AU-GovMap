@@ -63,7 +63,7 @@ function WMESendtoAUGovMap_init() {
     let mapLinkElement = document.createElement('a');
     mapLinkElement.id = 'WME-showState';
     mapLinkElement.classList.add('wz-map-black-link');
-    mapLinkElement.innerText = '🇦🇺 GovMap (Beta)';
+    mapLinkElement.innerText = '🇦🇺 GovMap';
     mapLinkElement.style = 'cursor: pointer';
     mapLinkElement.onclick = getMapLink;
 
