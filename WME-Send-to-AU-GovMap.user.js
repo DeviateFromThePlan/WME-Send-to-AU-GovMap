@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WME Send to AU GovMap
 // @namespace    https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap
-// @version      2025.01.20.01
+// @version      2025.02.23.01
 // @description  Opens your government's map to the coordinates currently in WME.
 // @author       DeviateFromThePlan, maporaptor & lacmacca
 // @license      MIT
@@ -26,7 +26,7 @@ if (window.location.hostname === 'www.waze.com' || 'beta.waze.com') {
 const ScriptName = GM_info.script.name;
 const ScriptVersion = GM_info.script.version;
 const ReleaseNotes = '<br><a href="https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap/releases" target="_blank"><img src="https://simpleicons.org/icons/github.svg" width=10> View Release Notes</a>';
-const UpdateNotes = '<h4><u>New features!</u></h4><ul><li>Script is now ready for the new WME SDK.</li><li>Support for Queensland added!</li><li>Support for the Northern Territory added!</li></ul>';
+const UpdateNotes = '<h4><u>Bug fixes:</u></h4><ul><li>Script did not recognise the beta WME URL & hence didn\'t initialise.</li></ul>';
 let wmeSDK;
 
 function log(message) {
