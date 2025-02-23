@@ -22,7 +22,7 @@
 /* global WazeWrap */
 /* global proj4 */
 
-if (window.location.hostname == 'www.waze.com' || 'beta.waze.com') {
+if (window.location.hostname === 'www.waze.com' || 'beta.waze.com') {
 const ScriptName = GM_info.script.name;
 const ScriptVersion = GM_info.script.version;
 const ReleaseNotes = '<br><a href="https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap/releases" target="_blank"><img src="https://simpleicons.org/icons/github.svg" width=10> View Release Notes</a>';
