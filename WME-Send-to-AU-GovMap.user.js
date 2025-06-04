@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WME Send to AU GovMap
 // @namespace    https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap
-// @version      2025.03.01.01
+// @version      2025.06.04.01
 // @description  Opens your government's map to the coordinates currently in WME.
 // @author       DeviateFromThePlan, maporaptor & lacmacca
 // @license      MIT
@@ -26,7 +26,7 @@ if (window.location.hostname === 'www.waze.com' || window.location.hostname === 
 const ScriptName = GM_info.script.name;
 const ScriptVersion = GM_info.script.version;
 const ReleaseNotes = '<br><a href="https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap/releases" target="_blank"><img src="https://simpleicons.org/icons/github.svg" width=10> View Release Notes</a>';
-const UpdateNotes = '<h4><u>Bug fixes:</u></h4><ul><li>Script was trying to initialise the WME SDK on QLD Globe & NT Maps so the loading code broke. DeviateFromThePlan apologies for the terrible fix he did. 👉👈</li></ul><h4><u>Known bugs:</u></h4><ul><li>Script tries to load QLD Globe code too early, so it requires a refresh before it actually works. Fix coming soon!</li></ul>';
+const UpdateNotes = '<h4><u>New features:</u></h4><ul><li>ArcGIS links migrated to new Map Viewer. This was done as the classic ArcGIS viewer is slated to be deprecated.</li></ul><h4><u>Known bugs:</u></h4><ul><li>Script tries to load QLD Globe code too early, so it requires a refresh before it actually works. Fix coming soon!</li></ul>';
 let wmeSDK;
 
 function log(message) {
@@ -173,7 +173,7 @@ function WMESendtoAUGovMap_init() {
         let { lon, lat } = wmeSDK.Map.getMapCenter();
         let scale = wmeSDK.Map.getZoomLevel();
 
-        const mapURL = `https://www.arcgis.com/home/webmap/viewer.html?basemapUrl=http%3A%2F%2Fmaps.six.nsw.gov.au%2Farcgis%2Frest%2Fservices%2Fpublic%2FNSW_Base_Map%2FMapServer&center=${lon},${lat}&level=${scale}`;
+        const mapURL = `https://www.arcgis.com/apps/mapviewer/index.html?basemapUrl=http://maps.six.nsw.gov.au/arcgis/rest/services/public/NSW_Base_Map/MapServer&center=${lon},${lat}&level=${scale}`;
         window.open(mapURL, '_blank');
 
         //Prevent default 'a' tag functionality
@@ -197,7 +197,7 @@ function WMESendtoAUGovMap_init() {
             scale = wazeZoom;
         }
 
-        const mapURL = `https://www.arcgis.com/home/webmap/viewer.html?basemapUrl=https%3A%2F%2Fservices.thelist.tas.gov.au%2Farcgis%2Frest%2Fservices%2FBasemaps%2FSimpleBasemap%2FMapServer&basemapReferenceUrl=https%3A%2F%2Fservices.thelist.tas.gov.au%2Farcgis%2Frest%2Fservices%2FPublic%2FTopographyAndRelief%2FMapServer%2F7&url=https%3A%2F%2Fservices.thelist.tas.gov.au%2Farcgis%2Frest%2Fservices%2FPublic%2FTopographyAndRelief%2FMapServer%2F7&center=${lon},${lat}&level=${scale}`;
+        const mapURL = `https://www.arcgis.com/apps/mapviewer/index.html?basemapUrl=https://services.thelist.tas.gov.au/arcgis/rest/services/Basemaps/SimpleBasemap/MapServer&basemapReferenceUrl=https://services.thelist.tas.gov.au/arcgis/rest/services/Public/TopographyAndRelief/MapServer/7&url=https://services.thelist.tas.gov.au/arcgis/rest/services/Public/TopographyAndRelief/MapServer/7&center=${lon},${lat}&level=${scale}`;
         window.open(mapURL, '_blank');
 
         //Prevent default 'a' tag functionality
@@ -209,8 +209,9 @@ function WMESendtoAUGovMap_init() {
     ///////////////////////
     function openGisWA() {
         let { lon, lat } = wmeSDK.Map.getMapCenter();
+        let scale = wmeSDK.Map.getZoomLevel();
 
-        const mapURL = `https://www.arcgis.com/home/webmap/viewer.html?basemapUrl=https://gisservices.mainroads.wa.gov.au/arcgis/rest/services/OpenData/RoadAssets_DataPortal/MapServer/?layers=show:11&url=https://gisservices.mainroads.wa.gov.au/arcgis/rest/services/OpenData/RoadAssets_DataPortal/MapServer/?layers=show:17&find=${lon},${lat}`;
+        const mapURL = `https://www.arcgis.com/apps/mapviewer/index.html?basemapUrl=https://gisservices.mainroads.wa.gov.au/arcgis/rest/services/OpenData/RoadAssets_DataPortal/MapServer/?layers=show:11&url=https://gisservices.mainroads.wa.gov.au/arcgis/rest/services/OpenData/RoadAssets_DataPortal/MapServer/?layers=show:17&find=${lon},${lat}`;
         window.open(mapURL, '_blank');
 
         //Prevent default 'a' tag functionality
