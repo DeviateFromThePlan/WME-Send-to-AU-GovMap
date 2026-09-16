@@ -340,9 +340,26 @@
 
     const warn = (message) => WazeWrap.Alerts.warning(ScriptName, message);
 
+    /**
+     * Click handler for the footer button. Anything that goes wrong is shown to
+     * the user as a WazeWrap error rather than only landing in the console,
+     * where most editors would never see it.
+     */
     function getMapLink(event) {
         if (event) event.preventDefault();
+        try {
+            openGovMap();
+        } catch (err) {
+            log('Unexpected error opening the map:', err);
+            WazeWrap.Alerts.error(
+                ScriptName,
+                `Something went wrong opening the government map: ${err && err.message ? err.message : err}`,
+            );
+        }
+        return false;
+    }
 
+    function openGovMap() {
         // Both getters return null when the map centre is over water, so check
         // for that before reading .name - and before the country check, or open
         // ocean gets reported as an unsupported country.
@@ -350,42 +367,33 @@
         const state = wmeSDK.DataModel.States.getTopState();
         if (!country || !state || !state.name) {
             warn('Please move closer to land.');
-            return false;
+            return;
         }
 
         if (country.name !== 'Australia') {
             warn("Sorry but we currently don't support loading maps from other countries but Australia.");
-            return false;
+            return;
         }
 
         const buildStateUrl = STATE_MAPS[state.name];
         if (!buildStateUrl) {
             warn(`Sorry but we currently don't support loading maps from ${state.name}.`);
-            return false;
+            return;
         }
 
         const center = wmeSDK.Map.getMapCenter();
         if (!center || !Number.isFinite(center.lat) || !Number.isFinite(center.lon)) {
             warn('Could not read the current map position. Try panning the map and clicking again.');
-            return false;
+            return;
         }
 
         const zoom = clamp(wmeSDK.Map.getZoomLevel(), WME_ZOOM_MIN, WME_ZOOM_MAX);
-
-        let url;
-        try {
-            url = buildStateUrl({ lat: center.lat, lon: center.lon, zoom });
-        } catch (err) {
-            log('Failed to build the map URL:', err);
-            warn('Something went wrong building the map link - see the browser console for details.');
-            return false;
-        }
+        const url = buildStateUrl({ lat: center.lat, lon: center.lon, zoom });
 
         log(`Opening ${state.name}: ${url}`);
         if (!window.open(url, '_blank')) {
             warn('Your browser blocked the new tab. Allow pop-ups for waze.com and try again.');
         }
-        return false;
     }
 
     async function addFooterButton() {
