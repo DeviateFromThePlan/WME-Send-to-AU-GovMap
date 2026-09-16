@@ -343,18 +343,18 @@
     function getMapLink(event) {
         if (event) event.preventDefault();
 
-        // Both getters return null when the map centre is not inside any
-        // boundary (ocean, or outside AU), so they must be null-checked before
-        // reading .name.
+        // Both getters return null when the map centre is over water, so check
+        // for that before reading .name - and before the country check, or open
+        // ocean gets reported as an unsupported country.
         const country = wmeSDK.DataModel.Countries.getTopCountry();
-        if (!country || country.name !== 'Australia') {
-            warn("Sorry but we currently don't support loading maps from other countries but Australia.");
+        const state = wmeSDK.DataModel.States.getTopState();
+        if (!country || !state || !state.name) {
+            warn('Please move closer to land.');
             return false;
         }
 
-        const state = wmeSDK.DataModel.States.getTopState();
-        if (!state || !state.name) {
-            warn('Please move closer to land.');
+        if (country.name !== 'Australia') {
+            warn("Sorry but we currently don't support loading maps from other countries but Australia.");
             return false;
         }
 
