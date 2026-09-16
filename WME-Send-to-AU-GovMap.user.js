@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WME Send to AU GovMap
 // @namespace    https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap
-// @version      2026.09.09.01
+// @version      2026.09.16.01
 // @description  Opens your government's map to the coordinates currently in WME.
 // @author       DeviateFromThePlan, maporaptor & lacmacca
 // @license      MIT
@@ -49,10 +49,14 @@
      * Resolves with the first truthy value returned by `probe`.
      * Uses a MutationObserver so it reacts immediately, with a slow interval as
      * a backstop for changes the observer cannot see (e.g. pure style updates).
+     * Observer callbacks are coalesced to one probe per animation frame: map
+     * pages mutate constantly, and probing (which measures layout) on every
+     * mutation slows the page down.
      */
     function waitUntil(probe, { timeout = DEFAULT_TIMEOUT_MS, label = 'condition' } = {}) {
         return new Promise((resolve, reject) => {
             let settled = false;
+            let frameQueued = false;
 
             const cleanup = () => {
                 observer.disconnect();
@@ -77,7 +81,14 @@
                 return false;
             };
 
-            const observer = new MutationObserver(attempt);
+            const observer = new MutationObserver(() => {
+                if (frameQueued || settled) return;
+                frameQueued = true;
+                requestAnimationFrame(() => {
+                    frameQueued = false;
+                    attempt();
+                });
+            });
             const ticker = setInterval(attempt, 250);
             const timer = setTimeout(() => {
                 settled = true;
@@ -116,20 +127,6 @@
 
     /** Same as waitFor, but resolves to null instead of throwing on timeout. */
     const waitForOptional = (selectors, opts) => waitFor(selectors, opts).catch(() => null);
-
-    /** Waits until nothing matching `selectors` is visible any more. */
-    function waitForGone(selectors, opts = {}) {
-        const list = Array.isArray(selectors) ? selectors : [selectors];
-        const probe = () => {
-            for (const selector of list) {
-                for (const el of document.querySelectorAll(selector)) {
-                    if (isVisible(el)) return null;
-                }
-            }
-            return true;
-        };
-        return waitUntil(probe, { label: `${list.join(' | ')} to disappear`, ...opts }).catch(() => false);
-    }
 
     /**
      * Finds the innermost element whose trimmed text matches. Matching on
@@ -332,7 +329,7 @@
         '<h4><u>Fixes:</u></h4><ul>',
         '<li>NT: NR Maps now moves and zooms to the right place again. It drives the Coordinate Zoom tool and the map scale box directly, and no longer depends on the internal ExtJS element ids, which had shifted and broken it.</li>',
         '<li>WA: the map now opens at the correct zoom. The Main Roads service has no tile cache, so using it as the base map left the viewer with no zoom levels to work with; the road network is now drawn over the standard base map instead.</li>',
-        '<li>QLD Globe: the script now waits for the terms/splash screen instead of assuming it has already rendered, which was leaving the search hidden behind the overlay.</li>',
+        '<li>QLD Globe: much faster, and it now opens at the same zoom as WME. Each step waits for the page instead of sitting out fixed delays, and the zoom is no longer undone by QLD Globe zooming to the search result.</li>',
         '<li>NSW: the base map is now loaded over https so it is no longer blocked as mixed content, and the zoom is capped at the level the SIX cache actually provides.</li>',
         '<li>The button no longer throws an error when the map centre is over water, and no longer goes missing when WME opens outside Australia.</li>',
         '</ul>',
@@ -454,6 +451,136 @@
     //  QLD Globe automation
     // ------------------------------------------------------------------
 
+    /**
+     * Finds QLD Globe's main Esri MapView by walking the app object instead of
+     * relying on a fixed property path. The page has two MapViews (the main map
+     * and the overview map); the main one has the largest container. Returns
+     * null if the page's internals no longer look like this.
+     */
+    function findQLDMapView() {
+        const views = [];
+        const seen = new WeakSet();
+        (function walk(obj, depth) {
+            if (!obj || typeof obj !== 'object' || seen.has(obj) || depth > 5) return;
+            seen.add(obj);
+            try {
+                if (obj.declaredClass === 'esri.views.MapView') {
+                    views.push(obj);
+                    return;
+                }
+            } catch (err) {
+                return;
+            }
+            let keys;
+            try {
+                keys = Object.keys(obj);
+            } catch (err) {
+                return;
+            }
+            for (const key of keys) {
+                let value;
+                try {
+                    value = obj[key];
+                } catch (err) {
+                    continue;
+                }
+                if (value && typeof value === 'object' && !(value instanceof Node)) walk(value, depth + 1);
+            }
+        })(window.app, 0);
+
+        const area = (view) => {
+            const rect = view.container && view.container.getBoundingClientRect && view.container.getBoundingClientRect();
+            return rect ? rect.width * rect.height : 0;
+        };
+        return views.sort((a, b) => area(b) - area(a))[0] || null;
+    }
+
+    /**
+     * Keeps the map at the WME scale for a few seconds after we set it.
+     *
+     * QLD Globe can re-zoom the map on its own after we have moved it: the
+     * search's zoom-to-result (which pads a point out to a minimum extent,
+     * roughly 1:10000) can land after ours if the two start within a few ms,
+     * and the view setup re-syncs the view a few seconds after load. Whenever
+     * the scale drifts, move it back. Stops as soon as the user touches the map
+     * so it never fights them.
+     */
+    function holdQLDView(view, scale, goThere, { holdMs = 6000 } = {}) {
+        const userEvents = ['pointerdown', 'wheel', 'touchstart', 'keydown'];
+        const container = view.container;
+        let stopped = false;
+        let pending = false;
+
+        const stop = () => {
+            if (stopped) return;
+            stopped = true;
+            clearInterval(ticker);
+            clearTimeout(timer);
+            if (container) userEvents.forEach((type) => container.removeEventListener(type, stop, true));
+        };
+
+        const check = () => {
+            if (stopped || pending) return;
+            if (Math.abs(Math.log(view.scale / scale)) < 0.02) return;
+            pending = true;
+            log(`QLD Globe: the page re-zoomed the map to 1:${Math.round(view.scale)}, putting it back.`);
+            goThere().catch(() => {}).then(() => {
+                pending = false;
+            });
+        };
+
+        if (container) userEvents.forEach((type) => container.addEventListener(type, stop, true));
+        const ticker = setInterval(check, 100);
+        const timer = setTimeout(stop, holdMs);
+        check();
+    }
+
+    /**
+     * Moves the map to the target at the WME scale.
+     *
+     * Submitting a search starts QLD Globe's own zoom to the result, and
+     * setting the scale box while that runs gets overwritten, which is why the
+     * map landed on the right spot at the wrong zoom. A non-animated goTo on the
+     * map view interrupts that zoom and applies centre and scale in one step,
+     * then holdQLDView keeps it there. If the map view can't be found, fall
+     * back to the scale box, but only after the page's own zoom has finished.
+     */
+    async function applyQLDScale(coords, scale, scaleBefore) {
+        const view = findQLDMapView();
+        if (view && typeof view.goTo === 'function') {
+            const goThere = () => view.goTo({ center: [coords.lon, coords.lat], scale }, { animate: false })
+                .catch((err) => {
+                    if (err.name !== 'view:goto-interrupted') throw err;
+                });
+            try {
+                await goThere();
+                holdQLDView(view, scale, goThere);
+                return;
+            } catch (err) {
+                log(`QLD Globe: could not move the map directly (${err.message}), using the scale box instead.`);
+            }
+        }
+
+        const scaleInput = await waitFor('#scale-control input', { timeout: 5000 });
+
+        // The box shows a new value once the fly-to lands; wait for that, then
+        // for it to stop changing, before typing ours in.
+        await waitUntil(() => scaleInput.value !== scaleBefore, { timeout: 8000, label: 'the search to finish zooming' })
+            .catch(() => {});
+        let last = scaleInput.value;
+        let changedAt = Date.now();
+        await waitUntil(() => {
+            if (scaleInput.value !== last) {
+                last = scaleInput.value;
+                changedAt = Date.now();
+            }
+            return Date.now() - changedAt >= 300;
+        }, { timeout: 5000, label: 'the map to settle' }).catch(() => {});
+
+        setInputValue(scaleInput, scale);
+        pressEnter(scaleInput);
+    }
+
     async function runAutomationQLD() {
         const params = new URLSearchParams(window.location.search);
         const coords = parseLatLon(params.get('center'));
@@ -465,74 +592,67 @@
         }
         const target = `${coords.lat.toFixed(5)},${coords.lon.toFixed(5)}`;
 
+        // Every wait below is for something that is guaranteed to turn up. The
+        // earlier version also waited for things that may never happen - the
+        // splash appearing, the splash disappearing, a fixed pause before the
+        // scale - and each of those sat out its full timeout, which is what
+        // made it slow.
         try {
-            // 1. Dismiss the terms / splash screen. It renders after load, so it
-            //    has to be waited for - querying straight away finds nothing and
-            //    every later step then runs behind the overlay.
-            const readCheck = await waitForOptional(
-                ['div.terms > div', 'div.read-check', '.read-check'],
-                { timeout: 15000, visible: true },
-            );
-            if (readCheck) readCheck.click();
-
-            const getStarted = await waitUntil(
-                () => findByText(['button', 'a', 'div', 'span'], 'GET STARTED'),
-                { timeout: 15000, label: 'the "Get started" button' },
-            ).catch(() => null);
-            if (getStarted) getStarted.click();
-
-            if (readCheck || getStarted) {
-                await waitForGone(['div.terms', '.read-check'], { timeout: 10000 });
-            }
-
-            // 2. Open the search panel.
+            // 1. Wait for the sidebar. The terms splash renders in the same pass,
+            //    so once the sidebar is there the splash is either showing or
+            //    not coming.
             const searchToggle = await waitFor([
+                "a[href='#sidebar-search']",
                 "a[aria-controls='sidebar-search']",
                 'li.contains-icon-search a',
-                "a[title*='Search']",
-                'li.contains-icon-search i',
-            ], { timeout: 20000, visible: true });
-            searchToggle.click();
+            ], { visible: true });
 
-            // 3. Switch to the coordinate search mode. Match on the label first
-            //    and only fall back to the positional selector.
-            const coordinateMode = await waitUntil(
-                () => findByText(['#sidebar-search li'], 'COORD', { exact: false })
-                    || document.querySelector('#sidebar-search li:nth-of-type(6)'),
-                { timeout: 15000, label: 'the coordinate search option' },
-            );
+            // 2. Dismiss the splash if it is up. Do not wait for it to go away:
+            //    its markup stays in the page at full size after it is
+            //    dismissed, so a "wait until hidden" check never passes.
+            const readCheck = document.querySelector('.read-check');
+            if (isVisible(readCheck)) readCheck.click();
+            const getStarted = findByText(['a', 'button'], 'GET STARTED');
+            if (isVisible(getStarted)) getStarted.click();
+
+            // 3. Open search and pick the lat/long mode, matched on its label
+            //    ("Latitude and Longitude") with the old positional selector as
+            //    a fallback.
+            searchToggle.click();
+            const coordinateMode = await waitUntil(() => {
+                const items = [...document.querySelectorAll('#sidebar-search li')].filter(isVisible);
+                return items.find((li) => /latitude/i.test(li.textContent))
+                    || (items.length ? document.querySelector('#sidebar-search li:nth-of-type(6)') : null);
+            }, { timeout: 10000, label: 'the Latitude and Longitude search option' });
             coordinateMode.click();
 
-            // 4. Enter the coordinates.
+            // 4. Enter the coordinates and submit.
             const input = await waitFor(
                 ['#sidebar-search input[type="text"]', '#sidebar-search input'],
-                { timeout: 15000, visible: true },
+                { timeout: 10000, visible: true },
             );
             setInputValue(input, target);
 
-            // 5. Submit.
-            const submit = await waitForOptional([
-                '#sidebar-search button[type="submit"]',
-                '#sidebar-search div.form i',
-                'div.form i',
-                '#sidebar-search button',
-                '.search-button',
-            ], { timeout: 8000, visible: true });
+            const scaleBox = document.querySelector('#scale-control input');
+            const scaleBefore = scaleBox ? scaleBox.value : null;
 
-            if (submit) {
+            const submit = document.querySelector('#sidebar-search div.form i')
+                || document.querySelector('div.form i');
+            if (isVisible(submit)) {
                 submit.click();
             } else {
-                log('QLD Globe: no search button found, submitting with Enter instead.');
                 pressEnter(input);
             }
 
-            // 6. Match the WME zoom. The search recentres first and can reset the
-            //    scale, so this has to happen afterwards.
+            // 5. Match the WME zoom once the search has placed its result, so the
+            //    search's own zoom can't land on top of ours.
             if (scale) {
-                await sleep(1500);
-                const scaleInput = await waitFor('#scale-control input', { timeout: 15000 });
-                setInputValue(scaleInput, Math.round(Number(scale)));
-                pressEnter(scaleInput);
+                await waitUntil(
+                    () => [...document.querySelectorAll('#sidebar-search .search-results li')]
+                        .find((li) => isVisible(li) && li.textContent.includes(target)) || null,
+                    { timeout: 8000, label: 'the search result' },
+                ).catch(() => log('QLD Globe: no search result showed, setting the scale anyway.'));
+                await applyQLDScale(coords, Math.round(Number(scale)), scaleBefore);
             }
 
             log('QLD Globe: done.');
