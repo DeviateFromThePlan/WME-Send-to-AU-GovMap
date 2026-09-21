@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WME Send to AU GovMap
 // @namespace    https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap
-// @version      2026.09.16.01
+// @version      2026.09.21.01
 // @description  Opens your government's map to the coordinates currently in WME.
 // @author       DeviateFromThePlan, maporaptor & lacmacca
 // @license      MIT
@@ -234,6 +234,11 @@
     const VIC_SCALE_MIN = 976.5644531289063;
     const VIC_SCALE_BASE_ZOOM = 6;
 
+    // MapShare's own encoding of a layer set (basemap plus the Vicmap
+    // Transport road and rail labels), copied from a MapShare share link. It is
+    // already URL-encoded, so it must go into the URL as-is.
+    const VIC_LAYERS = '3uXnvq2%2F7Gju1qBv%2BE1exh5B2QyE7X2NZLPj1qBv%2BE1exh5B2QyE7X1a%2BrRU3AktiU2j%2B9SY3nLu6D0poVnv0B8V8Z0nXUfb2808eE134Cfv1VC8SV30xOvX0XLQlK2apKdj1L5pnF1W2RMs1ANy%2BH3XikB50APgsK3pjUpZ3QwvSd2h3lEc0ocvat3AXBwk1dLxeM1Ynb9f19NEQ03Mkart0OgpII2AAqMk1%2F7fnZ2SSAmV2dVLLg29THcp0esJt%2B3uMwRb2TrpCK1Bcish3Mx7TY1G%2BZsm02oG%2F11MMMvH1qudLY1qy8pc3B5WKq1KMHS42KTwsK2g5CGb2t%2BJ931Bsloz0YFTf02Zt2Hh1CbU%2FB3S%2BNWC3T1u%2BD1nlgj30eqOPw3ZK6Qz0eKbZP1CcYxN2k2fBh3bvmsT1Pocd13MqwBP2FfPi62LopjD22G3%2Fq2ItfM72%2Fqiyk1di4QS0r76d50H35E51HhN5T35e37h3kPWGd03Tvip3kPW1a3kPVoY0SVzxl1XAOMo21DDRP0YBDmm1qhwxc';
+
     // Web Mercator scale denominator at zoom 20, used by QLD Globe and NR Maps.
     const SCALE_AT_ZOOM_20 = 564;
 
@@ -268,7 +273,7 @@
         'Victoria': ({ lat, lon, zoom }) => {
             const [x, y] = proj4(WGS_84, VIC_GRID_94, [lon, lat]);
             const scale = clamp(VIC_SCALE_MAX / Math.pow(2, zoom - VIC_SCALE_BASE_ZOOM), VIC_SCALE_MIN, VIC_SCALE_MAX);
-            return buildUrl('https://mapshare.vic.gov.au/mapsharevic/', { scale, center: `${x},${y}` });
+            return buildUrl('https://mapshare.vic.gov.au/mapsharevic/', { scale, center: `${x},${y}`, layers: VIC_LAYERS });
         },
 
         'South Australia': ({ lat, lon, zoom }) => buildUrl('https://location.sa.gov.au/viewer/', {
@@ -326,12 +331,17 @@
 
     const RELEASE_NOTES = '<br><a href="https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap/releases" target="_blank"><img src="https://simpleicons.org/icons/github.svg" width=10> View Release Notes</a>';
     const UPDATE_NOTES = [
+        '<h4><u>New:</u></h4><ul>',
+        '<li>VIC: MapShare now opens with the road and rail label layers switched on.</li>',
+        '</ul>',
         '<h4><u>Fixes:</u></h4><ul>',
-        '<li>NT: NR Maps now moves and zooms to the right place again. It drives the Coordinate Zoom tool and the map scale box directly, and no longer depends on the internal ExtJS element ids, which had shifted and broken it.</li>',
-        '<li>WA: the map now opens at the correct zoom. The Main Roads service has no tile cache, so using it as the base map left the viewer with no zoom levels to work with; the road network is now drawn over the standard base map instead.</li>',
-        '<li>QLD Globe: much faster, and it now opens at the same zoom as WME. Each step waits for the page instead of sitting out fixed delays, and the zoom is no longer undone by QLD Globe zooming to the search result.</li>',
-        '<li>NSW: the base map is now loaded over https so it is no longer blocked as mixed content, and the zoom is capped at the level the SIX cache actually provides.</li>',
-        '<li>The button no longer throws an error when the map centre is over water, and no longer goes missing when WME opens outside Australia.</li>',
+        '<li>NT: NR Maps moves and zooms to your location again.</li>',
+        '<li>QLD: Queensland Globe loads much faster and now opens at the same zoom as WME.</li>',
+        '<li>WA: the map now opens at the correct zoom.</li>',
+        '<li>NSW: the base map loads reliably (it was being blocked by the browser), and very close zooms no longer go past what the map supports.</li>',
+        '<li>Over water, you now get "Please move closer to land" instead of a script error.</li>',
+        '<li>Any problem opening a map is now shown as a popup instead of only in the browser console.</li>',
+        '<li>The GovMap button now appears even when WME first opens outside Australia.</li>',
         '</ul>',
     ].join('');
 
