@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WME Send to AU GovMap
 // @namespace    https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap
-// @version      2026.09.21.01
+// @version      2026.09.22.01
 // @description  Opens your government's map to the coordinates currently in WME.
 // @author       DeviateFromThePlan, maporaptor & lacmacca
 // @license      MIT
@@ -19,7 +19,7 @@
 // @iconURL      https://i.ibb.co/k8RdMh0/image.png
 // ==/UserScript==
 
-/* global WazeWrap, proj4, getWmeSdk, GM_info */
+/* global WazeWrap, proj4, getWmeSdk */
 
 (function () {
     'use strict';
@@ -331,17 +331,8 @@
 
     const RELEASE_NOTES = '<br><a href="https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap/releases" target="_blank"><img src="https://simpleicons.org/icons/github.svg" width=10> View Release Notes</a>';
     const UPDATE_NOTES = [
-        '<h4><u>New:</u></h4><ul>',
-        '<li>VIC: MapShare now opens with the road and rail label layers switched on.</li>',
-        '</ul>',
-        '<h4><u>Fixes:</u></h4><ul>',
-        '<li>NT: NR Maps moves and zooms to your location again.</li>',
-        '<li>QLD: Queensland Globe loads much faster and now opens at the same zoom as WME.</li>',
-        '<li>WA: the map now opens at the correct zoom.</li>',
-        '<li>NSW: the base map loads reliably (it was being blocked by the browser), and very close zooms no longer go past what the map supports.</li>',
-        '<li>Over water, you now get "Please move closer to land" instead of a script error.</li>',
-        '<li>Any problem opening a map is now shown as a popup instead of only in the browser console.</li>',
-        '<li>The GovMap button now appears even when WME first opens outside Australia.</li>',
+        '<h4><u>New features:</u></h4><ul>',
+        '<li>QLD: Queensland Globe now opens with the Address, Locality, Road parcel and Land parcel layers switched on.</li>',
         '</ul>',
     ].join('');
 
@@ -468,6 +459,48 @@
     // ------------------------------------------------------------------
     //  QLD Globe automation
     // ------------------------------------------------------------------
+
+    // The layers the AU community's third-party data guide recommends for
+    // editing (https://www.waze.com/discuss/t/375455). These are QLD Globe's
+    // own layer-list ids.
+    const QLD_LAYER_TOC_IDS = [
+        'toc-root-location-address', // Location > Address
+        'toc-root-boundaries-localbdy', // Boundaries > Locality
+        'toc-root-planning-parcels-road', // Planning cadastre > Road parcel
+        'toc-root-planning-parcels-base', // Planning cadastre > Land parcel
+    ];
+
+    /**
+     * Switches on the recommended layers once QLD Globe's layer list has
+     * loaded. It fires the same page event QLD Globe's own layer list fires
+     * when you tick a layer, and only for layers that are off, so nothing the
+     * user already has on is switched off.
+     */
+    async function enableQLDLayers() {
+        const findNode = (toc, id) => {
+            try {
+                return toc.findByTocId(id);
+            } catch (err) {
+                return null;
+            }
+        };
+        const toc = await waitUntil(() => {
+            const candidate = window.app && window.app.userMapsController && window.app.userMapsController.TOC;
+            return candidate && typeof candidate.findByTocId === 'function'
+                && QLD_LAYER_TOC_IDS.some((id) => findNode(candidate, id)) ? candidate : null;
+        }, { timeout: 20000, label: 'the layer list' });
+
+        const missing = QLD_LAYER_TOC_IDS.filter((id) => !findNode(toc, id));
+        if (missing.length) log(`QLD Globe: these layers no longer exist: ${missing.join(', ')}`);
+
+        const off = QLD_LAYER_TOC_IDS.filter((id) => {
+            const node = findNode(toc, id);
+            return node && !(node.model && node.model.selected);
+        });
+        if (off.length) {
+            window.qldglobe.observer.publish('toc-item-select-update-array', { tocIds: off, selected: true });
+        }
+    }
 
     /**
      * Finds QLD Globe's main Esri MapView by walking the app object instead of
@@ -632,6 +665,11 @@
             if (isVisible(readCheck)) readCheck.click();
             const getStarted = findByText(['a', 'button'], 'GET STARTED');
             if (isVisible(getStarted)) getStarted.click();
+
+            // The map (and its layer list) only starts once the splash is
+            // dismissed. Switching the layers on runs alongside the search
+            // rather than holding it up.
+            enableQLDLayers().catch((err) => log(`QLD Globe: could not switch the layers on: ${err.message}`));
 
             // 3. Open search and pick the lat/long mode, matched on its label
             //    ("Latitude and Longitude") with the old positional selector as
