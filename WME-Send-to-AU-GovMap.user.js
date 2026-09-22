@@ -406,12 +406,9 @@
     const RELEASE_NOTES = '<br><a href="https://github.com/DeviateFromThePlan/WME-Send-to-AU-GovMap/releases" target="_blank"><img src="https://simpleicons.org/icons/github.svg" width=10> View Release Notes</a>';
     const UPDATE_NOTES = [
         '<h4><u>New features:</u></h4><ul>',
-        '<li>NT: NR Maps now opens with the layers recommended in the AU third-party data guide switched on (General Text, Place Names and Localities are added) and the Coastline basemap instead of Google Maps.</li>',
-        '<li>NT: the NR Maps layer list now only shows the layers Waze editors are allowed to use.</li>',
-        '<li>QLD: layers Waze can\'t use are hidden and switched off - satellite imagery, tourism data, postcode and federal electoral boundaries, and other organisations\' data (NSW, Native Title Tribunal, NHVR, Energy Queensland, Esri). The Imagery basemap stays on for getting your bearings only.</li>',
-        '<li>VIC: MapShare\'s contour and Crown Parcel layers are hidden and switched off - they aren\'t under a Creative Commons licence.</li>',
-        '<li>SA: Location SA Viewer only shows the Roads and Road Route Numbers datasets and the Satellite map.</li>',
-        '<li>Each of these has a note explaining why, and a "Show all layers" tick box to see everything. Unticking it switches the hidden layers off again.</li>',
+        '<li>NT, QLD, VIC and SA now only show the layers Waze editors are allowed to use. Tick "Show all layers" to see everything.</li>',
+        '<li>NT: NR Maps opens with the recommended layers on and the Coastline basemap.</li>',
+        '<li>QLD: the Imagery basemap stays on, for getting your bearings only.</li>',
         '</ul>',
     ].join('');
 
